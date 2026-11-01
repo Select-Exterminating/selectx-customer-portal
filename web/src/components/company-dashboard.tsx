@@ -7,6 +7,18 @@ import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ProgramOverview } from "@/components/program-overview";
+import {
+  ExecutiveTabView,
+  RiskModelTabView,
+  RodentActivityTabView,
+  SanitationTabView,
+  StoreScorecardTabView,
+  StructuralTabView,
+  TrackerTabView,
+} from "@/components/program-tabs";
+import { ReportLibrary } from "@/components/report-library";
+import { RiskAssessmentsTabView } from "@/components/risk-assessment-dashboard";
 import { ReportTemplatesSection } from "@/components/report-templates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -405,67 +417,24 @@ function Stores({ d, linked }: { d: CompanyDashboard; linked: boolean }) {
   );
 }
 
-/** A tab whose data isn't collected yet (docs/customer-dashboard-plan.md). */
-function ComingSoon({ title, phase, shows }: { title: string; phase: string; shows: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>Not available yet: {phase}.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">{shows}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-const PLACEHOLDERS = [
-  {
-    value: "activity",
-    tab: "Rodent activity",
-    phase: "needs the findings sync (plan phase 2)",
-    shows:
-      "Activity rate by month and program stage, documented captures, where activity was found, and stores with recent activity, from PestPac device pest findings.",
-  },
-  {
-    value: "structural",
-    tab: "Structural",
-    phase: "needs the findings sync (plan phase 2)",
-    shows:
-      "Structural findings by type and area, logged vs. remediated by month, and open vulnerabilities, from PestPac conditions.",
-  },
-  {
-    value: "sanitation",
-    tab: "Sanitation & pests",
-    phase: "needs the findings sync (plan phase 2)",
-    shows:
-      "Sanitation concerns by type and area, secondary pests, and stores with recurring concerns.",
-  },
-  {
-    value: "tracker",
-    tab: "Program tracker",
-    phase: "needs programs and enrollments (plan phase 3)",
-    shows:
-      "Each location's program tier, stage, and milestone dates (launch, inspection, proposal, approval, phases).",
-  },
-  {
-    value: "risk",
-    tab: "Risk",
-    phase: "needs findings and program metrics (plan phase 4)",
-    shows:
-      "The program's risk index and bands per location, a portfolio risk map, and the customer's own risk lists alongside field findings.",
-  },
+const PROGRAM_TABS = [
+  ["overview", "Overview"],
+  ["executive", "Executive review"],
+  ["assessments", "Risk assessments"],
+  ["tracker", "Store tracker"],
+  ["activity", "Rodent activity"],
+  ["structural", "Structural"],
+  ["sanitation", "Sanitation & pests"],
+  ["stores", "Stores"],
+  ["risk", "Risk model"],
 ] as const;
 
 export function CompanyDashboardView() {
   const { companyId } = useParams<{ companyId: string }>();
-  const [tab, setTab] = useUrlTab(
-    ["overview", "stores", ...PLACEHOLDERS.map((p) => p.value), "reports"],
-    "overview",
-  );
+  const [tab, setTab] = useUrlTab([...PROGRAM_TABS.map(([value]) => value), "reports"], "overview");
   const { can, me } = usePermissions();
   const [billToId, setBillToId] = useState("");
+  const [market, setMarket] = useState("");
   const company = useCompaniesGetCompany(companyId);
   // A customer's user (company grant only) sees the dashboard alone: no bill-tos, store pages,
   // or the pages above the company. Staff see the company through their operator.
@@ -488,6 +457,11 @@ export function CompanyDashboardView() {
     );
   }
   const c = company.data?.data;
+  const program = staff && operatorId !== undefined && can("dashboards:read", operatorId);
+  const scope = { companyId, billToId, state: market };
+  const markets = [
+    ...new Set(dashboard.data?.data.stores.flatMap((s) => (s.state ? [s.state] : [])) ?? []),
+  ].sort();
 
   return (
     <div className="flex flex-col gap-6">
@@ -503,21 +477,38 @@ export function CompanyDashboardView() {
       </div>
 
       {staff && (
-        <div className="flex flex-col gap-2 sm:max-w-sm">
-          <Label htmlFor="dashboard-bill-to">Bill-to</Label>
-          <NativeSelect
-            id="dashboard-bill-to"
-            className="w-full"
-            value={billToId}
-            onChange={(e) => setBillToId(e.target.value)}
-          >
-            <NativeSelectOption value="">All bill-tos</NativeSelectOption>
-            {billTos.data?.data.map((b) => (
-              <NativeSelectOption key={b.id} value={b.id}>
-                {b.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex w-full flex-col gap-2 sm:max-w-sm">
+            <Label htmlFor="dashboard-bill-to">Bill-to</Label>
+            <NativeSelect
+              id="dashboard-bill-to"
+              className="w-full"
+              value={billToId}
+              onChange={(e) => setBillToId(e.target.value)}
+            >
+              <NativeSelectOption value="">All bill-tos</NativeSelectOption>
+              {billTos.data?.data.map((b) => (
+                <NativeSelectOption key={b.id} value={b.id}>
+                  {b.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="dashboard-market">Market</Label>
+            <NativeSelect
+              id="dashboard-market"
+              value={market}
+              onChange={(e) => setMarket(e.target.value)}
+            >
+              <NativeSelectOption value="">All markets</NativeSelectOption>
+              {markets.map((m) => (
+                <NativeSelectOption key={m} value={m}>
+                  {m}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
         </div>
       )}
 
@@ -533,31 +524,66 @@ export function CompanyDashboardView() {
         <Tabs value={tab} onValueChange={setTab}>
           <div className="overflow-x-auto">
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="stores">Stores</TabsTrigger>
-              {PLACEHOLDERS.map((p) => (
-                <TabsTrigger key={p.value} value={p.value}>
-                  {p.tab}
-                </TabsTrigger>
-              ))}
+              {program ? (
+                PROGRAM_TABS.map(([value, label]) => (
+                  <TabsTrigger key={value} value={value}>
+                    {label}
+                  </TabsTrigger>
+                ))
+              ) : (
+                <>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="stores">Stores</TabsTrigger>
+                </>
+              )}
               {c && can("reports:read", c.operator_id) && (
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               )}
             </TabsList>
           </div>
-          <TabsContent value="overview" className="pt-4">
-            <Overview d={dashboard.data.data} />
+          <TabsContent value="overview" className="flex flex-col gap-8 pt-4">
+            {/* Program results come from findings, which are internal: staff only. */}
+            {program ? (
+              <ProgramOverview companyId={companyId} billToId={billToId} state={market} />
+            ) : (
+              <Overview d={dashboard.data.data} />
+            )}
           </TabsContent>
           <TabsContent value="stores" className="pt-4">
-            <Stores d={dashboard.data.data} linked={staff} />
+            {program ? (
+              <StoreScorecardTabView scope={scope} />
+            ) : (
+              <Stores d={dashboard.data.data} linked={staff} />
+            )}
           </TabsContent>
-          {PLACEHOLDERS.map((p) => (
-            <TabsContent key={p.value} value={p.value} className="pt-4">
-              <ComingSoon title={p.tab} phase={p.phase} shows={p.shows} />
-            </TabsContent>
-          ))}
+          {program && (
+            <>
+              <TabsContent value="executive" className="pt-4">
+                <ExecutiveTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="assessments" className="pt-4">
+                <RiskAssessmentsTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="tracker" className="pt-4">
+                <TrackerTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="activity" className="pt-4">
+                <RodentActivityTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="structural" className="pt-4">
+                <StructuralTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="sanitation" className="pt-4">
+                <SanitationTabView scope={scope} />
+              </TabsContent>
+              <TabsContent value="risk" className="pt-4">
+                <RiskModelTabView scope={scope} />
+              </TabsContent>
+            </>
+          )}
           {c && can("reports:read", c.operator_id) && (
-            <TabsContent value="reports" className="flex flex-col gap-3 pt-4">
+            <TabsContent value="reports" className="flex flex-col gap-6 pt-4">
+              {program && <ReportLibrary scope={scope} />}
               <ReportTemplatesSection companyId={companyId} operatorId={c.operator_id} />
               <p className="text-sm text-muted-foreground">
                 Download a report from a location&apos;s page (Stores tab → location).

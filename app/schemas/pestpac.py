@@ -10,6 +10,12 @@ from app.models import ConnectionStatus
 Credential = Field(min_length=1, max_length=255)
 
 
+def _clean(raw: object) -> str:
+    """PestPac text, stripped; "" for null. NUL bytes are dropped: Postgres text can't hold them,
+    and PestPac lets them into free text (seen at the end of an order's service instructions)."""
+    return str(raw).replace("\x00", "").strip() if raw is not None else ""
+
+
 class PestPacConnectionWrite(BaseModel):
     """Secrets are write-only. Omit one to keep the stored value (required on first setup)."""
 
@@ -75,7 +81,7 @@ class PestPacBillToDetails(BaseModel):
         values: dict[str, object] = {"pestpac_bill_to_id": body["BillToID"]}
         for source, (attr, max_len) in _BILL_TO_FIELDS.items():
             raw = body.get(source)
-            text = str(raw).strip() if raw is not None else ""
+            text = _clean(raw)
             values[attr] = text[:max_len] or None
         return cls.model_validate(values)
 
@@ -149,7 +155,7 @@ class PestPacLocationDetails(BaseModel):
         }
         for source, (attr, max_len) in _LOCATION_TEXT_FIELDS.items():
             raw = body.get(source)
-            text = str(raw).strip() if raw is not None else ""
+            text = _clean(raw)
             values[attr] = text[:max_len] or None
         return cls.model_validate(values)
 
@@ -223,7 +229,7 @@ class PestPacServiceOrderDetails(BaseModel):
         }
         for source, (attr, max_len) in _SERVICE_ORDER_TEXT_FIELDS.items():
             raw = body.get(source)
-            text = str(raw).strip() if raw is not None else ""
+            text = _clean(raw)
             values[attr] = (text[:max_len] if max_len else text) or None
         return cls.model_validate(values)
 
@@ -263,7 +269,7 @@ class PestPacTechnicianDetails(BaseModel):
     def from_api(cls, body: dict) -> PestPacTechnicianDetails:
         def text(key: str) -> str | None:
             raw = body.get(key)
-            return (str(raw).strip()[:100] or None) if raw is not None else None
+            return _clean(raw)[:100] or None
 
         return cls(
             pestpac_tech_id=body["TechID"],
@@ -290,7 +296,7 @@ class PestPacNoteContent(BaseModel):
     def from_api(cls, body: dict) -> PestPacNoteContent:
         def text(key: str, max_len: int | None) -> str | None:
             raw = body.get(key)
-            value = str(raw).strip() if raw is not None else ""
+            value = _clean(raw)
             return (value[:max_len] if max_len else value) or None
 
         return cls(
@@ -400,7 +406,7 @@ class PestPacDocument(BaseModel):
     def from_api(cls, body: dict) -> PestPacDocument:
         def text(key: str, max_len: int) -> str | None:
             raw = body.get(key)
-            value = repair_mojibake(str(raw).strip()) if raw is not None else ""
+            value = repair_mojibake(_clean(raw))
             return value[:max_len] or None
 
         include_on = body.get("IncludeOn")
@@ -425,7 +431,7 @@ class PestPacDocument(BaseModel):
 
 def _text(body: dict, key: str, max_len: int | None) -> str | None:
     raw = body.get(key)
-    value = str(raw).strip() if raw is not None else ""
+    value = _clean(raw)
     return (value[:max_len] if max_len else value) or None
 
 

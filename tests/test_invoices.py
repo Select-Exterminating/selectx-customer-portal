@@ -403,3 +403,17 @@ def test_a_locations_orders_are_listed_as_posted_invoiced_and_open(client, onboa
     assert ids("invoiced") == [ORDER_ID]
     assert ids("open") == [1854701]
     assert ids("posted", q="3049999") == [1854700]
+
+
+def test_nul_bytes_in_pestpac_text_are_dropped():
+    """Postgres text can't hold NUL; PestPac let one into an order's service instructions."""
+    from app.schemas.pestpac import PestPacInvoiceDetails, PestPacServiceOrderDetails
+
+    invoice = PestPacInvoiceDetails.from_api(
+        pestpac_invoice(ServiceInstructions="It is systemic movement across the store.\x00")
+    )
+    assert invoice.service_instructions == "It is systemic movement across the store."
+    order = PestPacServiceOrderDetails.from_api(
+        _posted_order(TechnicianComment="Sealed\x00 entry points")
+    )
+    assert order.technician_comment == "Sealed entry points"

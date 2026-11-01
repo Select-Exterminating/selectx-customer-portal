@@ -1436,6 +1436,552 @@
         }
       }
     },
+    "/v1/companies/{company_id}/program-dashboard": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Program Dashboard",
+        "description": "Program results, Store Watch, and the risk index, from findings. Select staff only:\nfindings are internal, so company users get 404 here (no company_id is passed).",
+        "operationId": "dashboard-get_program_dashboard",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "bill_to_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one bill-to",
+              "title": "Bill To Id"
+            },
+            "description": "Limit to one bill-to"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one state",
+              "title": "State"
+            },
+            "description": "Limit to one state"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramDashboard"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{company_id}/program-tabs": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Program Tabs",
+        "description": "Rodent activity, structural, sanitation and pests, tracker, and executive review.",
+        "operationId": "dashboard-get_program_tabs",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "bill_to_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one bill-to",
+              "title": "Bill To Id"
+            },
+            "description": "Limit to one bill-to"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one state",
+              "title": "State"
+            },
+            "description": "Limit to one state"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramTabs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{company_id}/risk-assessment-dashboard": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Risk Assessment Dashboard",
+        "operationId": "dashboard-get_risk_assessment_dashboard",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "bill_to_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one bill-to",
+              "title": "Bill To Id"
+            },
+            "description": "Limit to one bill-to"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one state",
+              "title": "State"
+            },
+            "description": "Limit to one state"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessmentDashboard"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{company_id}/risk-assessment-findings": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Risk Assessment Findings",
+        "operationId": "dashboard-get_risk_assessment_findings",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "bill_to_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one bill-to",
+              "title": "Bill To Id"
+            },
+            "description": "Limit to one bill-to"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one state",
+              "title": "State"
+            },
+            "description": "Limit to one state"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "zone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentFindingPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{company_id}/report-library": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Report Library",
+        "operationId": "dashboard-get_report_library",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "bill_to_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one bill-to",
+              "title": "Bill To Id"
+            },
+            "description": "Limit to one bill-to"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit to one state",
+              "title": "State"
+            },
+            "description": "Limit to one state"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportLibraryPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/bill-tos/{bill_to_id}": {
       "get": {
         "tags": [
@@ -5945,6 +6491,53 @@
   },
   "components": {
     "schemas": {
+      "ActivityMonth": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "activity_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Rate"
+          },
+          "heavy_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heavy Rate"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "rated",
+          "activity_rate",
+          "heavy_rate",
+          "captures"
+        ],
+        "title": "ActivityMonth"
+      },
       "AreaTypeRead": {
         "properties": {
           "id": {
@@ -6056,6 +6649,441 @@
           "zone"
         ],
         "title": "AreaTypeUpdate"
+      },
+      "AssessedStore": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "inspection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Inspection Id"
+          },
+          "assessed_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessed On"
+          },
+          "assessments": {
+            "type": "integer",
+            "title": "Assessments"
+          },
+          "inspector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector"
+          },
+          "risk_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Index"
+          },
+          "sanitation_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sanitation Index"
+          },
+          "structural_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structural Index"
+          },
+          "max_zone": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Zone"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation"
+          },
+          "high_zones": {
+            "type": "integer",
+            "title": "High Zones"
+          },
+          "rodent_zones": {
+            "type": "integer",
+            "title": "Rodent Zones"
+          },
+          "pest_zones": {
+            "type": "integer",
+            "title": "Pest Zones"
+          },
+          "sweeps_failed": {
+            "type": "integer",
+            "title": "Sweeps Failed"
+          },
+          "in_program": {
+            "type": "boolean",
+            "title": "In Program"
+          },
+          "first_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "latitude",
+          "longitude",
+          "inspection_id",
+          "assessed_on",
+          "assessments",
+          "inspector",
+          "risk_index",
+          "sanitation_index",
+          "structural_index",
+          "max_zone",
+          "classification",
+          "recommendation",
+          "high_zones",
+          "rodent_zones",
+          "pest_zones",
+          "sweeps_failed",
+          "in_program",
+          "first_index"
+        ],
+        "title": "AssessedStore"
+      },
+      "AssessmentFinding": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "inspection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Inspection Id"
+          },
+          "assessed_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessed On"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "inspection_id",
+          "assessed_on",
+          "zone",
+          "kind",
+          "text"
+        ],
+        "title": "AssessmentFinding"
+      },
+      "AssessmentFindingPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentFinding"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "zones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Zones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "zones"
+        ],
+        "title": "AssessmentFindingPage"
+      },
+      "AssessmentZone": {
+        "properties": {
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "inspected": {
+            "type": "integer",
+            "title": "Inspected"
+          },
+          "rodent_rate": {
+            "type": "number",
+            "title": "Rodent Rate"
+          },
+          "pest_rate": {
+            "type": "number",
+            "title": "Pest Rate"
+          },
+          "avg_overall": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Overall"
+          },
+          "avg_sanitation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Sanitation"
+          },
+          "avg_structural": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Structural"
+          },
+          "tier3": {
+            "type": "integer",
+            "title": "Tier3"
+          },
+          "tier4": {
+            "type": "integer",
+            "title": "Tier4"
+          },
+          "tier5": {
+            "type": "integer",
+            "title": "Tier5"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone",
+          "inspected",
+          "rodent_rate",
+          "pest_rate",
+          "avg_overall",
+          "avg_sanitation",
+          "avg_structural",
+          "tier3",
+          "tier4",
+          "tier5"
+        ],
+        "title": "AssessmentZone"
       },
       "BillToCreate": {
         "properties": {
@@ -6786,6 +7814,64 @@
         "type": "object",
         "title": "BillToUpdate"
       },
+      "Breakdown": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "mentions": {
+            "type": "integer",
+            "title": "Mentions"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          },
+          "remediated": {
+            "type": "integer",
+            "title": "Remediated",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "mentions",
+          "stores",
+          "remediated"
+        ],
+        "title": "Breakdown",
+        "description": "How often something was logged, with the stores it appeared at."
+      },
+      "CohortPoint": {
+        "properties": {
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "activity_rate": {
+            "type": "number",
+            "title": "Activity Rate"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "rated",
+          "activity_rate",
+          "stores"
+        ],
+        "title": "CohortPoint"
+      },
       "CompanyCreate": {
         "properties": {
           "name": {
@@ -7109,6 +8195,48 @@
         },
         "type": "object",
         "title": "CompanyUpdate"
+      },
+      "ConcernMonth": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "sanitation_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sanitation Share"
+          },
+          "pest_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pest Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "rated",
+          "sanitation_share",
+          "pest_share"
+        ],
+        "title": "ConcernMonth"
       },
       "ConditionInspectionRead": {
         "properties": {
@@ -7565,6 +8693,44 @@
         "title": "Crumb",
         "description": "One step of a record's place in the hierarchy, for breadcrumbs."
       },
+      "CurvePoint": {
+        "properties": {
+          "period": {
+            "type": "integer",
+            "title": "Period"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "activity_rate": {
+            "type": "number",
+            "title": "Activity Rate"
+          },
+          "heavy_rate": {
+            "type": "number",
+            "title": "Heavy Rate"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "label",
+          "rated",
+          "activity_rate",
+          "heavy_rate",
+          "stores"
+        ],
+        "title": "CurvePoint"
+      },
       "DashboardHeadline": {
         "properties": {
           "locations": {
@@ -7817,6 +8983,271 @@
           "file_unavailable"
         ],
         "title": "DocumentRead"
+      },
+      "ExecutiveTab": {
+        "properties": {
+          "inception": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inception"
+          },
+          "through": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Through"
+          },
+          "stores_serviced": {
+            "type": "integer",
+            "title": "Stores Serviced"
+          },
+          "service_visits": {
+            "type": "integer",
+            "title": "Service Visits"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/VisitTypeCount"
+            },
+            "type": "array",
+            "title": "Tiers"
+          },
+          "visit_types": {
+            "items": {
+              "$ref": "#/components/schemas/VisitTypeCount"
+            },
+            "type": "array",
+            "title": "Visit Types"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/MonthVisits"
+            },
+            "type": "array",
+            "title": "Months"
+          },
+          "treated": {
+            "type": "integer",
+            "title": "Treated"
+          },
+          "stabilized_now": {
+            "type": "integer",
+            "title": "Stabilized Now"
+          },
+          "active_now": {
+            "type": "integer",
+            "title": "Active Now"
+          },
+          "recurrence": {
+            "type": "integer",
+            "title": "Recurrence"
+          },
+          "risk_start": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Start"
+          },
+          "risk_now": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Now"
+          },
+          "by_state": {
+            "items": {
+              "$ref": "#/components/schemas/HealthGroup"
+            },
+            "type": "array",
+            "title": "By State"
+          },
+          "by_tier": {
+            "items": {
+              "$ref": "#/components/schemas/HealthGroup"
+            },
+            "type": "array",
+            "title": "By Tier"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/PhaseActivity"
+            },
+            "type": "array",
+            "title": "Phases"
+          },
+          "cadence": {
+            "items": {
+              "$ref": "#/components/schemas/VisitTypeCount"
+            },
+            "type": "array",
+            "title": "Cadence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inception",
+          "through",
+          "stores_serviced",
+          "service_visits",
+          "captures",
+          "tiers",
+          "visit_types",
+          "months",
+          "treated",
+          "stabilized_now",
+          "active_now",
+          "recurrence",
+          "risk_start",
+          "risk_now",
+          "by_state",
+          "by_tier",
+          "phases",
+          "cadence"
+        ],
+        "title": "ExecutiveTab"
+      },
+      "GeneratedReport": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "order_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Number"
+          },
+          "work_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Date"
+          },
+          "finalized_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalized On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "id",
+          "title",
+          "revision",
+          "order_number",
+          "work_date",
+          "finalized_on"
+        ],
+        "title": "GeneratedReport"
       },
       "GoCanvasConnectionRead": {
         "properties": {
@@ -8206,6 +9637,39 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthGroup": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "treated": {
+            "type": "integer",
+            "title": "Treated"
+          },
+          "stabilized": {
+            "type": "integer",
+            "title": "Stabilized"
+          },
+          "recurrence": {
+            "type": "integer",
+            "title": "Recurrence"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "treated",
+          "stabilized",
+          "recurrence",
+          "active"
+        ],
+        "title": "HealthGroup"
       },
       "InspectionFindingItemRead": {
         "properties": {
@@ -9505,6 +10969,24 @@
         "title": "InvoicedOrderRead",
         "description": "An invoice with the service order it bills (null when we don't hold the order)."
       },
+      "LabelCount": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "stores"
+        ],
+        "title": "LabelCount"
+      },
       "LocationAreaRead": {
         "properties": {
           "id": {
@@ -10358,6 +11840,69 @@
         ],
         "title": "MonthCount"
       },
+      "MonthTrend": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "services": {
+            "type": "integer",
+            "title": "Services"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "activity_visits": {
+            "type": "integer",
+            "title": "Activity Visits"
+          },
+          "activity_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Rate"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "services",
+          "rated",
+          "activity_visits",
+          "activity_rate",
+          "captures"
+        ],
+        "title": "MonthTrend"
+      },
+      "MonthVisits": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "visits"
+        ],
+        "title": "MonthVisits"
+      },
       "NoteRead": {
         "properties": {
           "id": {
@@ -10492,6 +12037,113 @@
           "pestpac_invoice_id"
         ],
         "title": "NoteRead"
+      },
+      "OpenVulnerability": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "where": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where"
+          },
+          "issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "last_reported": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Reported"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "category",
+          "zone",
+          "where",
+          "issue",
+          "status",
+          "last_reported"
+        ],
+        "title": "OpenVulnerability"
       },
       "OperatorCreate": {
         "properties": {
@@ -11592,6 +13244,159 @@
         "title": "PestPacConnectionWrite",
         "description": "Secrets are write-only. Omit one to keep the stored value (required on first setup)."
       },
+      "PhaseActivity": {
+        "properties": {
+          "phase": {
+            "type": "string",
+            "title": "Phase"
+          },
+          "rated": {
+            "type": "integer",
+            "title": "Rated"
+          },
+          "activity_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Rate"
+          },
+          "heavy_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heavy Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phase",
+          "rated",
+          "activity_rate",
+          "heavy_rate"
+        ],
+        "title": "PhaseActivity",
+        "description": "Activity in active intervention against scheduled monitoring, by the order's code."
+      },
+      "Portfolio": {
+        "properties": {
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          },
+          "stores_serviced": {
+            "type": "integer",
+            "title": "Stores Serviced"
+          },
+          "services": {
+            "type": "integer",
+            "title": "Services"
+          },
+          "inspections": {
+            "type": "integer",
+            "title": "Inspections"
+          },
+          "rated_30d": {
+            "type": "integer",
+            "title": "Rated 30D"
+          },
+          "rodent_free_30d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rodent Free 30D"
+          },
+          "rodent_free_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rodent Free Change"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          },
+          "structural_logged": {
+            "type": "integer",
+            "title": "Structural Logged"
+          },
+          "structural_remediated": {
+            "type": "integer",
+            "title": "Structural Remediated"
+          },
+          "remediation_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation Rate"
+          },
+          "stores_active_now": {
+            "type": "integer",
+            "title": "Stores Active Now"
+          },
+          "recurrences": {
+            "type": "integer",
+            "title": "Recurrences"
+          },
+          "bands": {
+            "items": {
+              "$ref": "#/components/schemas/LabelCount"
+            },
+            "type": "array",
+            "title": "Bands"
+          },
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/LabelCount"
+            },
+            "type": "array",
+            "title": "Attention"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stores",
+          "stores_serviced",
+          "services",
+          "inspections",
+          "rated_30d",
+          "rodent_free_30d",
+          "rodent_free_change",
+          "captures",
+          "structural_logged",
+          "structural_remediated",
+          "remediation_rate",
+          "stores_active_now",
+          "recurrences",
+          "bands",
+          "attention"
+        ],
+        "title": "Portfolio"
+      },
       "PostedServiceOrderPage": {
         "properties": {
           "items": {
@@ -11915,6 +13720,481 @@
         ],
         "title": "PostedServiceOrderRead"
       },
+      "ProgramDashboard": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "bill_to_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bill To Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "states": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "States"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "results": {
+            "$ref": "#/components/schemas/ProgramResults"
+          },
+          "portfolio": {
+            "$ref": "#/components/schemas/Portfolio"
+          },
+          "curve": {
+            "items": {
+              "$ref": "#/components/schemas/CurvePoint"
+            },
+            "type": "array",
+            "title": "Curve"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthTrend"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "stores": {
+            "items": {
+              "$ref": "#/components/schemas/StoreWatchRow"
+            },
+            "type": "array",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "bill_to_id",
+          "state",
+          "states",
+          "as_of",
+          "results",
+          "portfolio",
+          "curve",
+          "monthly",
+          "stores"
+        ],
+        "title": "ProgramDashboard",
+        "description": "Program results for Select staff, worked out from worked orders and their findings."
+      },
+      "ProgramResults": {
+        "properties": {
+          "stores_measured": {
+            "type": "integer",
+            "title": "Stores Measured"
+          },
+          "intake_active": {
+            "type": "integer",
+            "title": "Intake Active"
+          },
+          "stabilized": {
+            "type": "integer",
+            "title": "Stabilized"
+          },
+          "stabilized_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stabilized Share"
+          },
+          "median_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Days"
+          },
+          "median_services": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Services"
+          },
+          "clean_after": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clean After"
+          },
+          "stabilized_now": {
+            "type": "integer",
+            "title": "Stabilized Now"
+          },
+          "services_per_store": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Services Per Store"
+          },
+          "early_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Early Rate"
+          },
+          "late_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Rate"
+          },
+          "early_heavy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Early Heavy"
+          },
+          "late_heavy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Heavy"
+          },
+          "early_visits": {
+            "type": "integer",
+            "title": "Early Visits"
+          },
+          "late_visits": {
+            "type": "integer",
+            "title": "Late Visits"
+          },
+          "time_to_stabilized": {
+            "items": {
+              "$ref": "#/components/schemas/LabelCount"
+            },
+            "type": "array",
+            "title": "Time To Stabilized"
+          },
+          "services_per_ramp": {
+            "items": {
+              "$ref": "#/components/schemas/LabelCount"
+            },
+            "type": "array",
+            "title": "Services Per Ramp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stores_measured",
+          "intake_active",
+          "stabilized",
+          "stabilized_share",
+          "median_days",
+          "median_services",
+          "clean_after",
+          "stabilized_now",
+          "services_per_store",
+          "early_rate",
+          "late_rate",
+          "early_heavy",
+          "late_heavy",
+          "early_visits",
+          "late_visits",
+          "time_to_stabilized",
+          "services_per_ramp"
+        ],
+        "title": "ProgramResults",
+        "description": "How fast stores stabilize, measured from each store's first service."
+      },
+      "ProgramTabs": {
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "activity": {
+            "$ref": "#/components/schemas/RodentActivityTab"
+          },
+          "structural": {
+            "$ref": "#/components/schemas/StructuralTab"
+          },
+          "sanitation": {
+            "$ref": "#/components/schemas/SanitationTab"
+          },
+          "tracker": {
+            "items": {
+              "$ref": "#/components/schemas/TrackerRow"
+            },
+            "type": "array",
+            "title": "Tracker"
+          },
+          "executive": {
+            "$ref": "#/components/schemas/ExecutiveTab"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "activity",
+          "structural",
+          "sanitation",
+          "tracker",
+          "executive"
+        ],
+        "title": "ProgramTabs",
+        "description": "Everything the dashboard's findings tabs show: one call, since they share their loads."
+      },
+      "RecentActivityStore": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "last_activity": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Activity"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "zones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "risk_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Index"
+          },
+          "risk_band": {
+            "type": "string",
+            "title": "Risk Band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "last_activity",
+          "level",
+          "zones",
+          "risk_index",
+          "risk_band"
+        ],
+        "title": "RecentActivityStore"
+      },
+      "RecurringSanitationStore": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "visits_with_concerns": {
+            "type": "integer",
+            "title": "Visits With Concerns"
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits"
+          },
+          "share": {
+            "type": "number",
+            "title": "Share"
+          },
+          "top_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "visits_with_concerns",
+          "visits",
+          "share",
+          "top_category"
+        ],
+        "title": "RecurringSanitationStore"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -11994,6 +14274,27 @@
         ],
         "title": "ReportData",
         "description": "What goes into the PDF (and the narrative draft), stored apart from the PDF itself."
+      },
+      "ReportLibraryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratedReport"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ReportLibraryPage"
       },
       "ReportNoteChoice": {
         "properties": {
@@ -12864,6 +15165,87 @@
         "title": "ReportUpdate",
         "description": "Edits to a draft. `photos` lists every candidate photo in the order wanted."
       },
+      "RiskAssessmentDashboard": {
+        "properties": {
+          "assessments": {
+            "type": "integer",
+            "title": "Assessments"
+          },
+          "zone_inspections": {
+            "type": "integer",
+            "title": "Zone Inspections"
+          },
+          "first": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "unlinked": {
+            "type": "integer",
+            "title": "Unlinked"
+          },
+          "stores": {
+            "items": {
+              "$ref": "#/components/schemas/AssessedStore"
+            },
+            "type": "array",
+            "title": "Stores"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentZone"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/StateCoverage"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "site": {
+            "items": {
+              "$ref": "#/components/schemas/SiteCondition"
+            },
+            "type": "array",
+            "title": "Site"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assessments",
+          "zone_inspections",
+          "first",
+          "last",
+          "unlinked",
+          "stores",
+          "zones",
+          "coverage",
+          "site"
+        ],
+        "title": "RiskAssessmentDashboard"
+      },
       "RiskInspectionDetail": {
         "properties": {
           "id": {
@@ -13601,6 +15983,54 @@
         ],
         "title": "RiskInspectionZoneRead"
       },
+      "RodentActivityTab": {
+        "properties": {
+          "cohort": {
+            "items": {
+              "$ref": "#/components/schemas/CohortPoint"
+            },
+            "type": "array",
+            "title": "Cohort"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityMonth"
+            },
+            "type": "array",
+            "title": "Months"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "species": {
+            "items": {
+              "$ref": "#/components/schemas/SpeciesOutcome"
+            },
+            "type": "array",
+            "title": "Species"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/RecentActivityStore"
+            },
+            "type": "array",
+            "title": "Recent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort",
+          "months",
+          "zones",
+          "species",
+          "recent"
+        ],
+        "title": "RodentActivityTab"
+      },
       "RoleRead": {
         "properties": {
           "name": {
@@ -13640,6 +16070,54 @@
         ],
         "title": "RoleScope",
         "description": "Which kind of tenant a role may be assigned on."
+      },
+      "SanitationTab": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "pests": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Pests"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/ConcernMonth"
+            },
+            "type": "array",
+            "title": "Months"
+          },
+          "stores": {
+            "items": {
+              "$ref": "#/components/schemas/RecurringSanitationStore"
+            },
+            "type": "array",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories",
+          "zones",
+          "pests",
+          "months",
+          "stores"
+        ],
+        "title": "SanitationTab"
       },
       "SearchHit": {
         "properties": {
@@ -14346,6 +16824,110 @@
         ],
         "title": "SignatureStatus"
       },
+      "SiteCondition": {
+        "properties": {
+          "attribute": {
+            "type": "string",
+            "title": "Attribute"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attribute",
+          "value",
+          "stores"
+        ],
+        "title": "SiteCondition"
+      },
+      "SpeciesOutcome": {
+        "properties": {
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          },
+          "stabilized": {
+            "type": "integer",
+            "title": "Stabilized"
+          },
+          "median_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "species",
+          "stores",
+          "stabilized",
+          "median_days"
+        ],
+        "title": "SpeciesOutcome",
+        "description": "Stores whose findings name one species, and how they stabilize."
+      },
+      "StateCoverage": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "in_program": {
+            "type": "integer",
+            "title": "In Program"
+          },
+          "assessed": {
+            "type": "integer",
+            "title": "Assessed"
+          },
+          "avg_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Index"
+          },
+          "high_or_critical": {
+            "type": "integer",
+            "title": "High Or Critical"
+          },
+          "with_rodents": {
+            "type": "integer",
+            "title": "With Rodents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "in_program",
+          "assessed",
+          "avg_index",
+          "high_or_critical",
+          "with_rodents"
+        ],
+        "title": "StateCoverage"
+      },
       "StoreRow": {
         "properties": {
           "location_id": {
@@ -14470,6 +17052,295 @@
           "last_service"
         ],
         "title": "StoreRow"
+      },
+      "StoreWatchRow": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "attention": {
+            "type": "string",
+            "title": "Attention"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/WatchFlag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "risk_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Index"
+          },
+          "risk_band": {
+            "type": "string",
+            "title": "Risk Band"
+          },
+          "services": {
+            "type": "integer",
+            "title": "Services"
+          },
+          "current_activity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Activity"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "days_since_activity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Since Activity"
+          },
+          "last_service": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Service"
+          },
+          "stabilized_now": {
+            "type": "boolean",
+            "title": "Stabilized Now"
+          },
+          "stabilized_since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stabilized Since"
+          },
+          "days_to_stabilized": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days To Stabilized"
+          },
+          "structural_open": {
+            "type": "integer",
+            "title": "Structural Open"
+          },
+          "spark": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Spark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "latitude",
+          "longitude",
+          "tier",
+          "attention",
+          "flags",
+          "risk_index",
+          "risk_band",
+          "services",
+          "current_activity",
+          "last_activity",
+          "days_since_activity",
+          "last_service",
+          "stabilized_now",
+          "stabilized_since",
+          "days_to_stabilized",
+          "structural_open",
+          "spark"
+        ],
+        "title": "StoreWatchRow"
+      },
+      "StructuralMonth": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "logged": {
+            "type": "integer",
+            "title": "Logged"
+          },
+          "remediated": {
+            "type": "integer",
+            "title": "Remediated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "logged",
+          "remediated"
+        ],
+        "title": "StructuralMonth"
+      },
+      "StructuralTab": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/Breakdown"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/StructuralMonth"
+            },
+            "type": "array",
+            "title": "Months"
+          },
+          "open": {
+            "items": {
+              "$ref": "#/components/schemas/OpenVulnerability"
+            },
+            "type": "array",
+            "title": "Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories",
+          "zones",
+          "months",
+          "open"
+        ],
+        "title": "StructuralTab"
       },
       "SyncJobKind": {
         "type": "string",
@@ -14748,6 +17619,156 @@
         ],
         "title": "TokenPair"
       },
+      "TrackerRow": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "first_inspection": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Inspection"
+          },
+          "first_service": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Service"
+          },
+          "first_monitoring": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Monitoring"
+          },
+          "first_stabilized": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Stabilized"
+          },
+          "last_service": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Service"
+          },
+          "services": {
+            "type": "integer",
+            "title": "Services"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "tier",
+          "first_inspection",
+          "first_service",
+          "first_monitoring",
+          "first_stabilized",
+          "last_service",
+          "services",
+          "stage"
+        ],
+        "title": "TrackerRow",
+        "description": "A store's milestones, as far as worked orders show them. The steps before the work\n(requested, proposed, approved) aren't recorded anywhere we can read."
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -14787,6 +17808,57 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VisitTypeCount": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "visits": {
+            "type": "integer",
+            "title": "Visits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "visits"
+        ],
+        "title": "VisitTypeCount"
+      },
+      "WatchFlag": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "short": {
+            "type": "string",
+            "title": "Short"
+          },
+          "weight": {
+            "type": "integer",
+            "title": "Weight"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "short",
+          "weight",
+          "detail"
+        ],
+        "title": "WatchFlag"
       },
       "WebhookAck": {
         "properties": {

@@ -571,3 +571,37 @@ def test_posted_orders_name_their_report(client, world, admin, template):
     page = client.get(f"/v1/companies/{world.company_a}/posted-service-orders", headers=admin)
     [item] = [i for i in page.json()["items"] if i["id"] == str(world.service_order_a)]
     assert item["report_id"] == report["id"]
+
+
+def test_report_library_lists_only_finished_reports(
+    client, world, admin, template, visit, fake_llm, storage
+):
+    library = f"/v1/companies/{world.company_a}/report-library"
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+    with SessionLocal() as db:
+        db.add(
+            Document(
+                operator_id=world.op_a,
+                document_type="LocationDocument",
+                pestpac_document_id=990001,
+                name="Invoice 2593788",
+                file_name="invoice.pdf",
+                location_id=world.location_a,
+                pestpac_location_id=800001,
+                pestpac_fetched_at=datetime.now(UTC),
+            )
+        )
+        db.commit()
+    # The world's own finished report is there; the draft and the invoice aren't.
+    before = client.get(library, headers=admin).json()
+    assert [r["title"] for r in before["items"]] == ["Service summary"]
+
+    client.post(f"{url}/draft", headers=admin)
+    _run_worker()
+    assert client.post(f"{url}/finalize", headers=admin).status_code == 200
+
+    body = client.get(library, headers=admin).json()
+    assert body["items"][0]["id"] == report["id"]  # newest first
+    assert [r["title"] for r in body["items"]] == [template["name"], "Service summary"]
+    assert client.get(f"{library}?q=invoice", headers=admin).json()["total"] == 0
