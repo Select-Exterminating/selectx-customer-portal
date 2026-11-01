@@ -27,6 +27,8 @@ app = FastAPI(
     version="0.1.0",
     generate_unique_id_function=_operation_id,
     lifespan=lifespan,
+    # Without an OpenAPI URL, FastAPI serves neither /docs nor /redoc either.
+    openapi_url="/openapi.json" if get_settings().api_docs_enabled else None,
 )
 
 # The browser talks to the Next.js BFF; this only matters for direct dev tooling.
