@@ -20,9 +20,19 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AssessmentFindingPage,
   CompanyDashboard,
   DashboardGetCompanyDashboardParams,
-  HTTPValidationError
+  DashboardGetProgramDashboardParams,
+  DashboardGetProgramTabsParams,
+  DashboardGetReportLibraryParams,
+  DashboardGetRiskAssessmentDashboardParams,
+  DashboardGetRiskAssessmentFindingsParams,
+  HTTPValidationError,
+  ProgramDashboard,
+  ProgramTabs,
+  ReportLibraryPage,
+  RiskAssessmentDashboard
 } from '../model';
 
 import { bffFetch } from '../../fetcher';
@@ -168,6 +178,669 @@ export function useDashboardGetCompanyDashboard<TData = Awaited<ReturnType<typeo
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDashboardGetCompanyDashboardQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetProgramDashboardResponse200 = {
+  data: ProgramDashboard
+  status: 200
+}
+
+export type dashboardGetProgramDashboardResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetProgramDashboardResponseSuccess = (dashboardGetProgramDashboardResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetProgramDashboardResponseError = (dashboardGetProgramDashboardResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetProgramDashboardUrl = (companyId: string,
+    params?: DashboardGetProgramDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/companies/${companyId}/program-dashboard?${stringifiedParams}` : `/v1/companies/${companyId}/program-dashboard`
+}
+
+/**
+ * Program results, Store Watch, and the risk index, from findings. Select staff only:
+ * findings are internal, so company users get 404 here (no company_id is passed).
+ * @summary Get Program Dashboard
+ */
+export const dashboardGetProgramDashboard = async (companyId: string,
+    params?: DashboardGetProgramDashboardParams, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetProgramDashboardResponseSuccess> => {
+
+  return bffFetch<dashboardGetProgramDashboardResponseSuccess>(getDashboardGetProgramDashboardUrl(companyId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetProgramDashboardQueryKey = (companyId: string,
+    params?: DashboardGetProgramDashboardParams,) => {
+    return [
+    `/v1/companies/${companyId}/program-dashboard`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDashboardGetProgramDashboardQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError = HTTPValidationError>(companyId: string,
+    params?: DashboardGetProgramDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetProgramDashboardQueryKey(companyId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>> = ({ signal }) => dashboardGetProgramDashboard(companyId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetProgramDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>>
+export type DashboardGetProgramDashboardQueryError = HTTPValidationError
+
+
+export function useDashboardGetProgramDashboard<TData = Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params: undefined |  DashboardGetProgramDashboardParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetProgramDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetProgramDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetProgramDashboard<TData = Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetProgramDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetProgramDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetProgramDashboard<TData = Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Program Dashboard
+ */
+
+export function useDashboardGetProgramDashboard<TData = Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetProgramDashboardQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetProgramTabsResponse200 = {
+  data: ProgramTabs
+  status: 200
+}
+
+export type dashboardGetProgramTabsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetProgramTabsResponseSuccess = (dashboardGetProgramTabsResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetProgramTabsResponseError = (dashboardGetProgramTabsResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetProgramTabsUrl = (companyId: string,
+    params?: DashboardGetProgramTabsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/companies/${companyId}/program-tabs?${stringifiedParams}` : `/v1/companies/${companyId}/program-tabs`
+}
+
+/**
+ * Rodent activity, structural, sanitation and pests, tracker, and executive review.
+ * @summary Get Program Tabs
+ */
+export const dashboardGetProgramTabs = async (companyId: string,
+    params?: DashboardGetProgramTabsParams, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetProgramTabsResponseSuccess> => {
+
+  return bffFetch<dashboardGetProgramTabsResponseSuccess>(getDashboardGetProgramTabsUrl(companyId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetProgramTabsQueryKey = (companyId: string,
+    params?: DashboardGetProgramTabsParams,) => {
+    return [
+    `/v1/companies/${companyId}/program-tabs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDashboardGetProgramTabsQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError = HTTPValidationError>(companyId: string,
+    params?: DashboardGetProgramTabsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetProgramTabsQueryKey(companyId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetProgramTabs>>> = ({ signal }) => dashboardGetProgramTabs(companyId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetProgramTabsQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetProgramTabs>>>
+export type DashboardGetProgramTabsQueryError = HTTPValidationError
+
+
+export function useDashboardGetProgramTabs<TData = Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError = HTTPValidationError>(
+ companyId: string,
+    params: undefined |  DashboardGetProgramTabsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetProgramTabs>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetProgramTabs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetProgramTabs<TData = Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramTabsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetProgramTabs>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetProgramTabs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetProgramTabs<TData = Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramTabsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Program Tabs
+ */
+
+export function useDashboardGetProgramTabs<TData = Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetProgramTabsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetProgramTabs>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetProgramTabsQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetRiskAssessmentDashboardResponse200 = {
+  data: RiskAssessmentDashboard
+  status: 200
+}
+
+export type dashboardGetRiskAssessmentDashboardResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetRiskAssessmentDashboardResponseSuccess = (dashboardGetRiskAssessmentDashboardResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetRiskAssessmentDashboardResponseError = (dashboardGetRiskAssessmentDashboardResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetRiskAssessmentDashboardUrl = (companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/companies/${companyId}/risk-assessment-dashboard?${stringifiedParams}` : `/v1/companies/${companyId}/risk-assessment-dashboard`
+}
+
+/**
+ * @summary Get Risk Assessment Dashboard
+ */
+export const dashboardGetRiskAssessmentDashboard = async (companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetRiskAssessmentDashboardResponseSuccess> => {
+
+  return bffFetch<dashboardGetRiskAssessmentDashboardResponseSuccess>(getDashboardGetRiskAssessmentDashboardUrl(companyId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetRiskAssessmentDashboardQueryKey = (companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams,) => {
+    return [
+    `/v1/companies/${companyId}/risk-assessment-dashboard`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDashboardGetRiskAssessmentDashboardQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError = HTTPValidationError>(companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetRiskAssessmentDashboardQueryKey(companyId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>> = ({ signal }) => dashboardGetRiskAssessmentDashboard(companyId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetRiskAssessmentDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>>
+export type DashboardGetRiskAssessmentDashboardQueryError = HTTPValidationError
+
+
+export function useDashboardGetRiskAssessmentDashboard<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params: undefined |  DashboardGetRiskAssessmentDashboardParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetRiskAssessmentDashboard<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetRiskAssessmentDashboard<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Risk Assessment Dashboard
+ */
+
+export function useDashboardGetRiskAssessmentDashboard<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentDashboard>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetRiskAssessmentDashboardQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetRiskAssessmentFindingsResponse200 = {
+  data: AssessmentFindingPage
+  status: 200
+}
+
+export type dashboardGetRiskAssessmentFindingsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetRiskAssessmentFindingsResponseSuccess = (dashboardGetRiskAssessmentFindingsResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetRiskAssessmentFindingsResponseError = (dashboardGetRiskAssessmentFindingsResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetRiskAssessmentFindingsUrl = (companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/companies/${companyId}/risk-assessment-findings?${stringifiedParams}` : `/v1/companies/${companyId}/risk-assessment-findings`
+}
+
+/**
+ * @summary Get Risk Assessment Findings
+ */
+export const dashboardGetRiskAssessmentFindings = async (companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetRiskAssessmentFindingsResponseSuccess> => {
+
+  return bffFetch<dashboardGetRiskAssessmentFindingsResponseSuccess>(getDashboardGetRiskAssessmentFindingsUrl(companyId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetRiskAssessmentFindingsQueryKey = (companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams,) => {
+    return [
+    `/v1/companies/${companyId}/risk-assessment-findings`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDashboardGetRiskAssessmentFindingsQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError = HTTPValidationError>(companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetRiskAssessmentFindingsQueryKey(companyId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>> = ({ signal }) => dashboardGetRiskAssessmentFindings(companyId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetRiskAssessmentFindingsQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>>
+export type DashboardGetRiskAssessmentFindingsQueryError = HTTPValidationError
+
+
+export function useDashboardGetRiskAssessmentFindings<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError = HTTPValidationError>(
+ companyId: string,
+    params: undefined |  DashboardGetRiskAssessmentFindingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetRiskAssessmentFindings<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetRiskAssessmentFindings<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Risk Assessment Findings
+ */
+
+export function useDashboardGetRiskAssessmentFindings<TData = Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetRiskAssessmentFindingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetRiskAssessmentFindings>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetRiskAssessmentFindingsQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetReportLibraryResponse200 = {
+  data: ReportLibraryPage
+  status: 200
+}
+
+export type dashboardGetReportLibraryResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetReportLibraryResponseSuccess = (dashboardGetReportLibraryResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetReportLibraryResponseError = (dashboardGetReportLibraryResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetReportLibraryUrl = (companyId: string,
+    params?: DashboardGetReportLibraryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/companies/${companyId}/report-library?${stringifiedParams}` : `/v1/companies/${companyId}/report-library`
+}
+
+/**
+ * @summary Get Report Library
+ */
+export const dashboardGetReportLibrary = async (companyId: string,
+    params?: DashboardGetReportLibraryParams, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetReportLibraryResponseSuccess> => {
+
+  return bffFetch<dashboardGetReportLibraryResponseSuccess>(getDashboardGetReportLibraryUrl(companyId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetReportLibraryQueryKey = (companyId: string,
+    params?: DashboardGetReportLibraryParams,) => {
+    return [
+    `/v1/companies/${companyId}/report-library`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDashboardGetReportLibraryQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError = HTTPValidationError>(companyId: string,
+    params?: DashboardGetReportLibraryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetReportLibraryQueryKey(companyId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetReportLibrary>>> = ({ signal }) => dashboardGetReportLibrary(companyId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetReportLibraryQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetReportLibrary>>>
+export type DashboardGetReportLibraryQueryError = HTTPValidationError
+
+
+export function useDashboardGetReportLibrary<TData = Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError = HTTPValidationError>(
+ companyId: string,
+    params: undefined |  DashboardGetReportLibraryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetReportLibrary>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetReportLibrary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetReportLibrary<TData = Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetReportLibraryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetReportLibrary>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetReportLibrary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetReportLibrary<TData = Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetReportLibraryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Report Library
+ */
+
+export function useDashboardGetReportLibrary<TData = Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError = HTTPValidationError>(
+ companyId: string,
+    params?: DashboardGetReportLibraryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetReportLibrary>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetReportLibraryQueryOptions(companyId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

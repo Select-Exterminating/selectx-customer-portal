@@ -576,6 +576,37 @@ CASES = [
         _all(404, platform_admin=200, admin_a=200, staff_a=200, manager_a=200),
     ),
     Case(
+        "program dashboard of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/program-dashboard",
+        # Findings are internal: company users (manager_a) can't see it.
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "program tabs of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/program-tabs",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "risk assessment dashboard of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/risk-assessment-dashboard",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "risk assessment findings of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/risk-assessment-findings",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "report library of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/report-library",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
         "list report templates of company A",
         "GET",
         lambda w: f"/v1/companies/{w.company_a}/report-templates",
