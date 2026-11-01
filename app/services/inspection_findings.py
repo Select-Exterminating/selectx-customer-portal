@@ -21,7 +21,7 @@ from app.integrations.openrouter import Usage
 from app.models import InspectionFinding, InspectionFindingItem, Zone
 
 # Bump when INSTRUCTIONS or FindingsOut change in a way that changes what's extracted.
-METHOD_VERSION = 3
+METHOD_VERSION = 4
 
 VisitType = Literal[
     "risk_assessment",
@@ -154,12 +154,16 @@ RULES = """\
 - rodent_activity: none when the notes say no activity was found; heavy for heavy, significant,
   widespread, or infestation; moderate for active, several, or multiple; low for minor, isolated, or
   single. Reported evidence (captures, droppings, sightings, gnaw marks) means activity: at least
-  low for one, moderate for several. Null when the notes don't assess it.
+  low for one, moderate for several. Only current evidence counts: old or historic evidence (a
+  capture or droppings the notes date to before this period or call old, dried, or historic; rub
+  marks or gnaw marks with no fresh signs alongside them) isn't activity, so when nothing current
+  was found this is none, whatever old evidence is mentioned. Evidence the notes don't date counts
+  as current, except rub and gnaw marks. Null when the notes don't assess it.
 - rodent_species: rat and/or mouse, only when named.
 - rodent_evidence: the kinds of evidence the notes report (droppings, capture, live sighting, gnaw
   marks, rub marks, burrows, nesting, dead rodent, tracks).
 - rodents_captured: only a number the notes state; else null.
-- activity_locations: where activity was found: a short phrase (e.g. "serving line motor
+- activity_locations: where current activity was found: a short phrase (e.g. "serving line motor
   compartment") and its zone.
 - devices_serviced: only a number the notes state; else null.
 - exclusion_status: intact or compromised, only when the notes assess it. Doors left open or
