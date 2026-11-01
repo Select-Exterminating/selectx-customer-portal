@@ -1,0 +1,9 @@
+# Allow-list: this repository holds secrets, customer data, and the MinIO data directory, so
+# nothing reaches the image unless it's named here.
+*
+!app/
+!alembic/
+!alembic.ini
+!Pipfile
+!Pipfile.lock
+**/__pycache__

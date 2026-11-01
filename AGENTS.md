@@ -24,7 +24,7 @@ Object storage is any S3-compatible service, reached only through the S3 API (no
 
 FastAPI is the authority for domain behavior, authentication, authorization, sessions, and auditing. Do not move domain logic into the UI or its proxy layer.
 
-The OpenAPI document at `/openapi.json` is the API contract. Interactive docs are at `/docs`. The frontend's TypeScript types and client are generated from it with Orval; never hand-edit generated output.
+The OpenAPI document at `/openapi.json` is the API contract. Interactive docs are at `/docs`. `API_DOCS_ENABLED=false` turns both off, as in production, where the API has a public domain for webhooks (`docs/deployment.md`). The frontend's TypeScript types and client are generated from it with Orval; never hand-edit generated output.
 
 Current API surface (keep the versioned shape unless a contract change is requested):
 

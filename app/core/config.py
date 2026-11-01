@@ -30,6 +30,10 @@ class Settings(BaseSettings):
 
     web_origin: str = "http://localhost:3001"
 
+    # Serves /docs, /redoc, and /openapi.json. Off in production, where the API has a public domain
+    # for webhooks. pnpm api:generate reads /openapi.json, so it stays on locally.
+    api_docs_enabled: bool = True
+
     # Comma-separated Fernet keys; the first encrypts. See app/security/secrets.py.
     app_encryption_keys: str = ""
 
