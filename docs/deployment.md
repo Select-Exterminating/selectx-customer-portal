@@ -11,15 +11,15 @@ Railway or R2 yet. Sizes were measured on 2026-11-01, so check them again before
 
 | Piece      | Runs on    | Start command                                  | Network               |
 | ---------- | ---------- | ---------------------------------------------- | --------------------- |
-| `api`      | Railway    | Image default (`uvicorn` on port 8001)         | Public domain, for webhooks |
+| `api`      | Railway    | Image default (`uvicorn` on port 8001)         | Private               |
 | `worker`   | Railway    | `python -m app.worker`                         | None; run one instance |
-| `web`      | Railway    | Image default (`next start` on port 3001)      | Public domain, for users |
+| `web`      | Railway    | Image default (`next start` on port 3001)      | Public domain, for users and webhooks |
 | `Postgres` | Railway    | Railway's image                                | Private               |
 | Files      | R2         | Not applicable                                 | S3 API over HTTPS     |
 
-The browser calls `web`, and `web` calls `api` over Railway's private network. `api` needs a public
-domain too, because PestPac and GoCanvas post webhooks straight to FastAPI: the BFF doesn't forward
-them.
+The browser calls `web`, and `web` calls `api` over Railway's private network. PestPac and GoCanvas
+post webhooks to `web` too, which forwards them to FastAPI, so `web` is the only public domain. While
+`web` is down, webhooks are refused along with the UI.
 
 Both images bind to `0.0.0.0`, as Railway's docs say to. Don't change that to `::`: uvicorn then
 listens on IPv6 only. Private DNS only resolves to IPv4 in environments created after October 16,
@@ -102,7 +102,7 @@ docker run --rm postgres:17 psql "$DATABASE_PUBLIC_URL" -At -c "select version()
 | Watch paths    | `/app/**`, `/alembic/**`, `/alembic.ini`, `/Pipfile*`, `/Dockerfile` | Same as `api` | `/web/**` |
 | Start command  | Leave empty                   | `python -m app.worker` | Leave empty                          |
 | Health check   | `/health`                     | None                   | `/login`                             |
-| Public domain  | Yes, port 8001                | No                     | Yes, port 3001                       |
+| Public domain  | No                            | No                     | Yes, port 3001                       |
 
 `api` also needs this pre-deploy command:
 
@@ -112,8 +112,8 @@ docker run --rm postgres:17 psql "$DATABASE_PUBLIC_URL" -At -c "select version()
 
 If it exits non-zero, the deploy stops. It isn't retried.
 
-Generate the domains now, because the variables below use them. If you add custom domains through
-Cloudflare DNS, start with those records set to **DNS only** (grey cloud).
+Generate the `web` domain now, because the variables below use it. If you add a custom domain through
+Cloudflare DNS, start with that record set to **DNS only** (grey cloud).
 
 ### Variables for `api` and `worker`
 
@@ -137,7 +137,7 @@ can't drift apart.
 | `OPENROUTER_DEFAULT_MODEL`    | Copy from local `.env`                                      |
 | `FINDINGS_FALLBACK_MODEL`     | Copy from local `.env`                                      |
 | `SYNC_ACTIVE`                 | `false` until step 7                                        |
-| `API_DOCS_ENABLED`            | `false`, since `api` has a public domain                    |
+| `API_DOCS_ENABLED`            | `false`                                                     |
 | `PESTPAC_DEBUG_BODIES`        | `false`                                                     |
 | `OPENROUTER_DEBUG_BODIES`     | `false`                                                     |
 
@@ -224,15 +224,16 @@ Check all of these on the public `web` domain:
 - [ ] Open a stored document and an inspection photo (reads from R2).
 - [ ] Finalize a test service report (WeasyPrint and a write to R2).
 - [ ] Verify a PestPac connection on the operator page (proves the encryption keys carried over).
-- [ ] Check that `https://<api domain>/health` answers and `https://<api domain>/docs` returns 404.
+- [ ] Open `https://<web domain>/v1/webhooks/gocanvas/00000000-0000-0000-0000-000000000000`. It should
+      answer `{"status":"accepted"}` and store nothing, which proves `web` forwards webhooks to `api`.
 - [ ] Check the `worker` logs for `Worker started` and the warning that `SYNC_ACTIVE` is off.
 
 ## 7. Go live
 
 1. Set `SYNC_ACTIVE=true`, which redeploys `api` and `worker`.
 2. Change the webhook URLs. Operator IDs carry over in the restore, so only the host changes.
-   - PestPac: `https://<api domain>/v1/webhooks/pestpac`
-   - GoCanvas: `https://<api domain>/v1/webhooks/gocanvas/{operator_id}`
+   - PestPac: `https://<web domain>/v1/webhooks/pestpac`
+   - GoCanvas: `https://<web domain>/v1/webhooks/gocanvas/{operator_id}`
 3. Confirm new deliveries appear on the operator page's Webhooks and GoCanvas tabs.
 4. Catch up on what the gap missed:
    - Run **Orders and notes** on your bill-tos in the UI. This also picks up invoices and conditions.

@@ -24,7 +24,7 @@ Object storage is any S3-compatible service, reached only through the S3 API (no
 
 FastAPI is the authority for domain behavior, authentication, authorization, sessions, and auditing. Do not move domain logic into the UI or its proxy layer.
 
-The OpenAPI document at `/openapi.json` is the API contract. Interactive docs are at `/docs`. `API_DOCS_ENABLED=false` turns both off, as in production, where the API has a public domain for webhooks (`docs/deployment.md`). The frontend's TypeScript types and client are generated from it with Orval; never hand-edit generated output.
+The OpenAPI document at `/openapi.json` is the API contract. Interactive docs are at `/docs`. `API_DOCS_ENABLED=false` turns both off, as in production (`docs/deployment.md`). The frontend's TypeScript types and client are generated from it with Orval; never hand-edit generated output.
 
 Current API surface (keep the versioned shape unless a contract change is requested):
 
@@ -257,6 +257,7 @@ Next.js is a thin backend-for-frontend (BFF):
 - The browser calls Next.js, not FastAPI.
 - Next.js stores tokens in `HttpOnly`, `Secure`, `SameSite` cookies (`Secure` in production and whenever the request came over HTTPS, including through a tunnel). Browser JavaScript never receives JWTs or stores them in `localStorage`/`sessionStorage`.
 - The BFF proxy forwards no `/v1/auth/*` route except `me` and `password` (trailing slashes ignored), and never follows FastAPI redirects.
+- `/v1/webhooks/*` in Next.js forwards only the PestPac and GoCanvas receivers to FastAPI, streaming the body, with no session or CSRF check. It's how webhooks reach production, where only `web` has a public domain.
 - `next.config.ts` sets X-Frame-Options (SAMEORIGIN), Referrer-Policy, nosniff, Permissions-Policy, and HSTS on every response, and no X-Powered-By. Not a global Content-Security-Policy: document files carry their own (`sandbox`).
 - Next.js forwards requests with the access token as a Bearer header and coordinates refresh.
 - State-changing BFF endpoints have CSRF protection. Prefer same-origin deployment.

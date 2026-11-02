@@ -127,6 +127,13 @@ def test_bad_signatures_are_recorded_not_refused(client, onboarded, secret, sign
     assert [e.signature_status for e in events()] == [expected]
 
 
+def test_signatures_joined_by_the_web_proxy_are_checked_one_by_one(client, onboarded, secret):
+    payload = order_event()
+    joined = f"{'0' * 64}, {sign(payload['EntityBody'])}"
+    assert post(client, payload, signature=joined).status_code == 200
+    assert [e.signature_status for e in events()] == ["valid"]
+
+
 def test_operator_without_a_secret_is_flagged(client, onboarded):
     payload = order_event()
     post(client, payload, signature=sign(payload["EntityBody"]))

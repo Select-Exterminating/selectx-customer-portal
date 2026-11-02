@@ -41,6 +41,11 @@ async def _body(request: Request) -> bytes:
     return bytes(raw)
 
 
+def _signatures(request: Request) -> list[str]:
+    """Each `signature` header value. Repeated headers arrive comma-joined through the web proxy."""
+    return [s for value in request.headers.getlist("signature") for s in value.split(",")]
+
+
 @router.post("/pestpac", response_model=WebhookAck)
 async def receive_pestpac(request: Request, db: Session = Depends(get_db)):
     """PestPac webhook deliveries. Public (PestPac holds no session); authenticity comes from
@@ -53,7 +58,7 @@ async def receive_pestpac(request: Request, db: Session = Depends(get_db)):
             webhooks.receive,
             db,
             raw,
-            signatures=request.headers.getlist("signature"),
+            signatures=_signatures(request),
             timestamp=request.headers.get("timestamputc"),
             client=_client(request),
         )
