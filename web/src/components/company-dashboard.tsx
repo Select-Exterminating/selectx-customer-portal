@@ -19,7 +19,6 @@ import {
 } from "@/components/program-tabs";
 import { ReportLibrary } from "@/components/report-library";
 import { RiskAssessmentsTabView } from "@/components/risk-assessment-dashboard";
-import { ReportTemplatesSection } from "@/components/report-templates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -584,7 +583,6 @@ export function CompanyDashboardView() {
           {c && can("reports:read", c.operator_id) && (
             <TabsContent value="reports" className="flex flex-col gap-6 pt-4">
               {program && <ReportLibrary scope={scope} />}
-              <ReportTemplatesSection companyId={companyId} operatorId={c.operator_id} />
               <p className="text-sm text-muted-foreground">
                 Download a report from a location&apos;s page (Stores tab → location).
               </p>

@@ -31,6 +31,7 @@ import {
   useReportsUpdateReportTemplate,
 } from "@/lib/api/generated/reports/reports";
 import { fetchPdf } from "@/lib/api/pdf";
+import { usePermissions } from "@/lib/permissions";
 import { useUrlTab } from "@/lib/use-url-tab";
 
 const STARTER_HTML = `<!doctype html>
@@ -419,7 +420,18 @@ function CompanyCrumbs({ companyId }: { companyId: string }) {
 
 export function NewReportTemplate() {
   const { companyId } = useParams<{ companyId: string }>();
+  const { can } = usePermissions();
+  const company = useCompaniesGetCompany(companyId);
   useDocumentTitle("New report template");
+  if (company.isPending) return <p className="text-muted-foreground">Loading…</p>;
+  // Reached only by URL: the company page links here for those who can write templates.
+  if (company.isError || !can("report_templates:write", company.data.data.operator_id)) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>You can&apos;t add report templates for this company.</AlertDescription>
+      </Alert>
+    );
+  }
   return (
     <div className="flex flex-col gap-6">
       <div>
