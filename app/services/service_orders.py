@@ -153,7 +153,7 @@ def upsert_order(
     if event_at is not None:
         order.last_event_at = event_at
     if newly_posted:
-        findings_extraction.request_if_enabled(db, order, bill_to.company_id)
+        findings_extraction.request_if_enabled(db, order, bill_to)
     return order
 
 

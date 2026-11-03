@@ -9,4 +9,5 @@ export interface BillToUpdate {
   name?: string | null;
   description?: string | null;
   is_active?: boolean | null;
+  extract_findings?: boolean | null;
 }

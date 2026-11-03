@@ -232,7 +232,7 @@ def upsert_invoice(
     if order is not None:
         _complete_order(order, invoice, now)
         if not was_posted:  # worked and billed between our syncs, or new to us
-            findings_extraction.request_if_enabled(db, order, bill_to.company_id)
+            findings_extraction.request_if_enabled(db, order, bill_to)
     db.flush()
     return invoice
 

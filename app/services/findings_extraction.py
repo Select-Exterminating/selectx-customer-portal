@@ -2,7 +2,7 @@
 orders nobody drafts a report for. Same rules and storage as drafting (`inspection_findings`).
 
 Queue: `inspection_finding_requests`, one row per order. An order is queued when it's posted, if
-its company has `extract_findings` on (`request_if_enabled`), or by the backfill command
+its bill-to has `extract_findings` on (`request_if_enabled`), or by the backfill command
 (`python -m app.extract_findings`). The worker claims requests oldest first once they're
 REQUEST_DELAY old (an order sync stores the location's notes after its orders), reads the order's
 technician comment and its SERVICE notes (linked to the order or on its work date), and stores the
@@ -176,9 +176,9 @@ def request(
     return len(order_ids)
 
 
-def request_if_enabled(db: Session, order: ServiceOrder, company_id: uuid.UUID) -> bool:
-    """Queue a newly posted order if its company extracts findings. Doesn't commit."""
-    if not db.scalar(select(Company.extract_findings).where(Company.id == company_id)):
+def request_if_enabled(db: Session, order: ServiceOrder, bill_to: BillTo) -> bool:
+    """Queue a newly posted order if its bill-to extracts findings. Doesn't commit."""
+    if not bill_to.extract_findings:
         return False
     request(db, order.operator_id, [order.id])
     return True

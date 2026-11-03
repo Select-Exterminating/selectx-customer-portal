@@ -95,11 +95,12 @@ class BillToCreate(BaseModel):
 
 
 class BillToUpdate(PartialUpdate):
-    _not_nullable = ("name", "is_active")
+    _not_nullable = ("name", "is_active", "extract_findings")
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=1000)
     is_active: bool | None = None
+    extract_findings: bool | None = None
 
 
 class BillToRead(BaseModel):
@@ -112,6 +113,7 @@ class BillToRead(BaseModel):
     name: str
     description: str | None
     is_active: bool
+    extract_findings: bool
     onboarded_at: datetime
     onboarded_by: uuid.UUID | None
     pestpac_bill_to_code: str | None
