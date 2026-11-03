@@ -174,6 +174,8 @@ class ReportCondition(BaseModel):
     status: str | None
     date_opened: datetime | None
     action: str | None
+    # What the issue is; `condition` is often only "Custom Condition".
+    detail: str | None = None
 
 
 class ReportPhoto(BaseModel):
@@ -231,6 +233,29 @@ class ReportTechnicianComment(BaseModel):
     selected: bool
 
 
+class ReportConditionComment(BaseModel):
+    """A comment from an inspection of a condition during the visit, with what the condition is.
+    Sent to the LLM with the notes when selected."""
+
+    comment_id: uuid.UUID
+    pestpac_issue_id: int
+    # PestPac local wall-clock time.
+    date: datetime | None
+    author: str | None
+    status_at_inspection: str | None
+    text: str
+    # False: it has no order in PestPac, and belongs to the visit by its date.
+    linked_to_order: bool
+    description: str | None
+    area: str | None
+    category: str | None
+    severity: str | None
+    responsibility: str | None
+    action: str | None
+    date_opened: datetime | None
+    selected: bool
+
+
 class ReportPhotoItem(BaseModel):
     """An image dated near the order's work date. Selected ones appear in the report, in
     list order, with their caption."""
@@ -254,6 +279,7 @@ class ReportData(BaseModel):
     photos: list[ReportPhotoItem]
     # None when the order had no comment (and for reports started before this existed).
     technician_comment: ReportTechnicianComment | None = None
+    condition_comments: list[ReportConditionComment] = []
 
 
 class ReportCreate(BaseModel):
@@ -263,6 +289,11 @@ class ReportCreate(BaseModel):
 
 class ReportNoteChoice(BaseModel):
     note_id: uuid.UUID
+    selected: bool
+
+
+class ReportConditionCommentChoice(BaseModel):
+    comment_id: uuid.UUID
     selected: bool
 
 
@@ -278,6 +309,9 @@ class ReportUpdate(BaseModel):
     fields: dict[str, Any] | None = None
     notes: list[ReportNoteChoice] | None = Field(default=None, max_length=1000)
     technician_comment_selected: bool | None = None
+    condition_comments: list[ReportConditionCommentChoice] | None = Field(
+        default=None, max_length=1000
+    )
     photos: list[ReportPhotoChoice] | None = Field(default=None, max_length=1000)
 
 

@@ -14234,6 +14234,182 @@
         ],
         "title": "RefreshRequest"
       },
+      "ReportConditionComment": {
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Comment Id"
+          },
+          "pestpac_issue_id": {
+            "type": "integer",
+            "title": "Pestpac Issue Id"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "status_at_inspection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status At Inspection"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "linked_to_order": {
+            "type": "boolean",
+            "title": "Linked To Order"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "responsibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsibility"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "date_opened": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Opened"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "comment_id",
+          "pestpac_issue_id",
+          "date",
+          "author",
+          "status_at_inspection",
+          "text",
+          "linked_to_order",
+          "description",
+          "area",
+          "category",
+          "severity",
+          "responsibility",
+          "action",
+          "date_opened",
+          "selected"
+        ],
+        "title": "ReportConditionComment",
+        "description": "A comment from an inspection of a condition during the visit, with what the condition is.\nSent to the LLM with the notes when selected."
+      },
+      "ReportConditionCommentChoice": {
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Comment Id"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "comment_id",
+          "selected"
+        ],
+        "title": "ReportConditionCommentChoice"
+      },
       "ReportCreate": {
         "properties": {
           "template_id": {
@@ -14289,6 +14465,14 @@
                 "type": "null"
               }
             ]
+          },
+          "condition_comments": {
+            "items": {
+              "$ref": "#/components/schemas/ReportConditionComment"
+            },
+            "type": "array",
+            "title": "Condition Comments",
+            "default": []
           }
         },
         "type": "object",
@@ -15170,6 +15354,21 @@
               }
             ],
             "title": "Technician Comment Selected"
+          },
+          "condition_comments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReportConditionCommentChoice"
+                },
+                "type": "array",
+                "maxItems": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Comments"
           },
           "photos": {
             "anyOf": [

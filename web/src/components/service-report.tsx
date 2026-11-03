@@ -343,6 +343,7 @@ function Editor({ report }: { report: ReportRead }) {
   const [notes, setNotes] = useState(report.data.notes);
   const techComment = report.data.technician_comment ?? null;
   const [useComment, setUseComment] = useState(techComment?.selected ?? false);
+  const [conditionComments, setConditionComments] = useState(report.data.condition_comments ?? []);
   const [photos, setPhotos] = useState(report.data.photos);
   const [dirty, setDirty] = useState(false);
   const edit =
@@ -366,6 +367,10 @@ function Editor({ report }: { report: ReportRead }) {
     fields,
     notes: notes.map((n) => ({ note_id: n.note_id, selected: n.selected })),
     ...(techComment ? { technician_comment_selected: useComment } : {}),
+    condition_comments: conditionComments.map((c) => ({
+      comment_id: c.comment_id,
+      selected: c.selected,
+    })),
     photos: photos.map((p) => ({
       document_id: p.document_id,
       selected: p.selected,
@@ -380,10 +385,14 @@ function Editor({ report }: { report: ReportRead }) {
 
   const selectedNotes = notes.filter((n) => n.selected).length;
   const commentSelected = techComment !== null && useComment;
-  // What the narrative is drafted from: selected notes, plus the technician comment.
+  const selectedConditionComments = conditionComments.filter((c) => c.selected).length;
+  // What the narrative is drafted from: selected notes, the technician comment, condition comments.
   const sources = [
     selectedNotes > 0 ? `${selectedNotes} note${selectedNotes === 1 ? "" : "s"}` : "",
     commentSelected ? "the technician comment" : "",
+    selectedConditionComments > 0
+      ? `${selectedConditionComments} condition comment${selectedConditionComments === 1 ? "" : "s"}`
+      : "",
   ]
     .filter(Boolean)
     .join(" and ");
@@ -450,7 +459,11 @@ function Editor({ report }: { report: ReportRead }) {
               </Button>
               <Button
                 variant="outline"
-                disabled={locked || busy || (selectedNotes === 0 && !commentSelected)}
+                disabled={
+                  locked ||
+                  busy ||
+                  (selectedNotes === 0 && !commentSelected && selectedConditionComments === 0)
+                }
                 onClick={() => saveThen(() => draft.mutateAsync({ reportId: report.id }))}
               >
                 <Sparkles aria-hidden />
@@ -546,6 +559,48 @@ function Editor({ report }: { report: ReportRead }) {
               ))}
             </ul>
           </section>
+          {conditionComments.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <h2 className="text-xl">Condition comments ({selectedConditionComments} selected)</h2>
+              <p className="text-sm text-muted-foreground">
+                Comments from inspections of the store&apos;s conditions. Those with no order in
+                PestPac are matched by date and may describe another technician&apos;s work on the
+                same visit. Selected comments are sent with the notes.
+              </p>
+              <ul className="divide-y divide-border border border-border bg-card">
+                {conditionComments.map((c, i) => (
+                  <li key={c.comment_id} className="flex gap-3 p-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 size-4 accent-primary"
+                      aria-label={`Use the comment on condition ${c.pestpac_issue_id}`}
+                      disabled={locked}
+                      checked={c.selected}
+                      onChange={(e) =>
+                        edit(setConditionComments)(
+                          conditionComments.map((x, j) =>
+                            j === i ? { ...x, selected: e.target.checked } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground">
+                        {formatPestPacDate(c.date, true)}
+                        {c.author && ` · ${c.author}`}
+                        {c.status_at_inspection && ` · ${c.status_at_inspection}`}
+                        {c.linked_to_order ? " · linked to this order" : " · matched by date"}
+                      </span>
+                      <span className="text-sm font-medium">
+                        {[c.area, c.description].filter(Boolean).join(": ")}
+                      </span>
+                      <p className="text-sm whitespace-pre-line">{c.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section className="flex flex-col gap-2">
             <h2 className="text-xl">Photos ({photos.filter((p) => p.selected).length} selected)</h2>
             <p className="text-sm text-muted-foreground">

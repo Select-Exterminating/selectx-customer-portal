@@ -49,6 +49,7 @@ from app.schemas.reports import (
     ReportUpdate,
     TemplateField,
 )
+from app.services import conditions as conditions_service
 from app.services import files, inspection_findings, llm_tasks, reports
 from app.storage import ObjectStorage, StorageError
 
@@ -168,8 +169,14 @@ def _candidates(
             author=n.created_by_name,
             text=n.note,
             linked_to_order=n.service_order_id == order.id,
+            # Another order's note on the same day is that technician's: offered, not selected.
             selected=n.service_order_id == order.id
-            or (n.note_date is not None and n.note_date.date() == work_day),
+            or (
+                n.note_date is not None
+                and n.note_date.date() == work_day
+                and n.service_order_id is None
+                and not n.pestpac_order_id
+            ),
         )
         for n in notes
     ]
@@ -283,6 +290,7 @@ def create_report(
             if order.technician_comment
             else None
         ),
+        condition_comments=conditions_service.visit_comments(db, order),
     )
     report = Report(
         operator_id=template.operator_id,
@@ -343,6 +351,12 @@ def update_report(
         if data.technician_comment is None:
             raise ReportInputError("This report has no technician comment")
         data.technician_comment.selected = changes.technician_comment_selected
+    if changes.condition_comments is not None:
+        by_id = {c.comment_id: c for c in data.condition_comments}
+        for choice in changes.condition_comments:
+            if choice.comment_id not in by_id:
+                raise ReportInputError(f"Comment {choice.comment_id} isn't one of this report's")
+            by_id[choice.comment_id].selected = choice.selected
     if changes.photos is not None:
         by_id = {p.document_id: p for p in data.photos}
         listed = [c.document_id for c in changes.photos]
@@ -368,8 +382,14 @@ def request_draft(db: Session, report: Report, user_id: uuid.UUID) -> Report:
     _require_draft(report)
     data = report_data(report)
     comment = data.technician_comment
-    if not any(n.selected for n in data.notes) and not (comment and comment.selected):
-        raise ReportInputError("Select at least one note or the technician comment to draft from")
+    if (
+        not any(n.selected for n in data.notes)
+        and not (comment and comment.selected)
+        and not any(c.selected for c in data.condition_comments)
+    ):
+        raise ReportInputError(
+            "Select at least one note, the technician comment, or a condition comment to draft from"
+        )
     report.status = ReportStatus.drafting
     report.draft_requested_at = datetime.now(UTC)
     report.draft_error = None
@@ -405,6 +425,7 @@ def draft_instructions(template: ReportTemplate, fields: list[TemplateField]) ->
     ]
     return (
         f"{(template.prompt or '').strip()}\n\n"
+        f"CONDITION COMMENTS\n{inspection_findings.CONDITION_COMMENT_RULES}\n\n"
         "OUTPUT\n"
         "Reply with a JSON object with exactly these keys. 'paragraphs' and 'list' are arrays "
         "of strings; 'sections' is an array of {heading, paragraphs}. Use **double asterisks** "
@@ -434,6 +455,9 @@ def draft_input(data: ReportData) -> dict[str, Any]:
             {"author": data.technician_comment.author, "text": data.technician_comment.text}
             if data.technician_comment and data.technician_comment.selected
             else None
+        ),
+        "condition_comments": conditions_service.comments_input(
+            [c for c in data.condition_comments if c.selected]
         ),
     }
 

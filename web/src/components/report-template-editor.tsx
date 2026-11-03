@@ -94,7 +94,7 @@ const VARIABLES = [
   ],
   [
     "conditions",
-    "open conditions: pestpac_issue_id, area, area_hierarchy, condition, category, severity, responsibility, status, date_opened, action",
+    "open conditions: pestpac_issue_id, area, area_hierarchy, condition, category, severity, responsibility, status, date_opened, action, detail",
   ],
   ["fields", "the fields below, by key; render text with |rich for **bold**"],
   ["photos", "selected photos: src (embedded), caption"],

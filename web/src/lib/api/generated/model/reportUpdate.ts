@@ -4,6 +4,7 @@
  * Customer Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportConditionCommentChoice } from './reportConditionCommentChoice';
 import type { ReportNoteChoice } from './reportNoteChoice';
 import type { ReportPhotoChoice } from './reportPhotoChoice';
 import type { ReportUpdateFields } from './reportUpdateFields';
@@ -15,5 +16,6 @@ export interface ReportUpdate {
   fields?: ReportUpdateFields;
   notes?: ReportNoteChoice[] | null;
   technician_comment_selected?: boolean | null;
+  condition_comments?: ReportConditionCommentChoice[] | null;
   photos?: ReportPhotoChoice[] | null;
 }

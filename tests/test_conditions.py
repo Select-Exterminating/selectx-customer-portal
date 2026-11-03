@@ -1,3 +1,7 @@
+from sqlalchemy import select
+
+from app.db.session import SessionLocal
+from app.models import ConditionInspection, ServiceOrder
 from tests.conftest import (
     pestpac_condition,
     pestpac_condition_detail,
@@ -276,3 +280,35 @@ def test_an_orders_page_lists_what_was_logged_on_it_and_that_day(client, onboard
         41010: "same_day",
     }
     assert related["conditions"][-1]["link"] == "same_day"  # linked ones first
+
+
+def test_an_inspection_holding_the_orders_number_links_to_it(client, onboarded, pestpac):
+    pestpac.orders_by_location[STORE] = [
+        pestpac_order(
+            1865005,
+            STORE,
+            180020,
+            Posted=True,
+            OrderNumber="3047998",
+            WorkDate="2026-10-22T19:00:00",
+        )
+    ]
+    _run_worker()
+    conditions = [
+        _condition(41008, 0, [pestpac_inspection(3047998, "2026-10-23T08:00:00", "By number")]),
+        _condition(41009, 0, [pestpac_inspection(1865005, "2026-10-23T08:00:00", "By id")]),
+        _condition(41010, 0, [pestpac_inspection(0, "2026-10-23T08:00:00", "No order")]),
+        _condition(41011, 0, [pestpac_inspection(111, "2026-10-23T08:00:00", "Unknown")]),
+    ]
+    pestpac.conditions_by_location[STORE] = [item for item, _ in conditions]
+    for item, detail in conditions:
+        pestpac.condition_details[item["IssueID"]] = detail
+    _sync_locations(client, onboarded)
+
+    with SessionLocal() as db:
+        order = db.scalar(select(ServiceOrder).where(ServiceOrder.pestpac_order_id == 1865005))
+        linked = {
+            i.comment: i.service_order_id == order.id
+            for i in db.scalars(select(ConditionInspection))
+        }
+    assert linked == {"By number": True, "By id": True, "No order": False, "Unknown": False}

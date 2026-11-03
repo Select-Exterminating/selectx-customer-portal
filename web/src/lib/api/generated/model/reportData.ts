@@ -4,6 +4,7 @@
  * Customer Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportConditionComment } from './reportConditionComment';
 import type { ReportDataContext } from './reportDataContext';
 import type { ReportDataFields } from './reportDataFields';
 import type { ReportNoteItem } from './reportNoteItem';
@@ -19,4 +20,5 @@ export interface ReportData {
   notes: ReportNoteItem[];
   photos: ReportPhotoItem[];
   technician_comment?: ReportTechnicianComment | null;
+  condition_comments?: ReportConditionComment[];
 }

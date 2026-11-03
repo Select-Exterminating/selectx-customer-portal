@@ -5,10 +5,11 @@ Queue: `inspection_finding_requests`, one row per order. An order is queued when
 its bill-to has `extract_findings` on (`request_if_enabled`), or by the backfill command
 (`python -m app.extract_findings`). The worker claims requests oldest first once they're
 REQUEST_DELAY old (an order sync stores the location's notes after its orders), reads the order's
-technician comment and its SERVICE notes (linked to the order or on its work date), and stores the
-findings with source `extraction`. Findings from a report draft are never replaced: a person chose
-those notes. An order with nothing to read is skipped. A failure keeps the request, with its
-error, out of the queue until it's requeued.
+technician comment, its SERVICE notes (linked to the order, or on its work date and linked to no
+order), and the visit's inspection comments on conditions, and stores the findings with source
+`extraction`. Findings from a report draft are never replaced: a person chose those notes. An order
+with nothing to read is skipped. A failure keeps the request, with its error, out of the queue until
+it's requeued.
 """
 
 import logging
@@ -32,7 +33,7 @@ from app.models import (
     Note,
     ServiceOrder,
 )
-from app.services import inspection_findings, llm_tasks, reports
+from app.services import conditions, inspection_findings, llm_tasks, reports
 
 log = logging.getLogger(__name__)
 
@@ -54,8 +55,13 @@ A JSON object with:
 - service_order: the visit (work_date, service_code, description, technician_name).
 - notes: the technician's notes from the visit, oldest first (date, author, text).
 - technician_comment: the technician's comment on the service order (author, text), or null.
-The notes and the technician comment are the only sources; treat them together as "the notes".
-Never invent anything: when the notes don't say, use null or an empty list.
+- condition_comments: inspection comments on the store's tracked issues, oldest first.
+The notes, the technician comment, and the condition comments are the only sources; treat them
+together as "the notes". Never invent anything: when the notes don't say, use null or an empty list.
+
+"""
+    + inspection_findings.CONDITION_COMMENT_RULES
+    + """
 
 OUTPUT
 Reply with a JSON object with exactly these keys:
@@ -77,10 +83,18 @@ TASK = llm_tasks.LLMTask(
 
 def _visit_note(order_id: Any, location_id: Any, work_date: Any) -> ColumnElement[bool]:
     """A SERVICE note with text from the order's visit: linked to it, or on its work date (a
-    date, or a column of dates; None when the order has none)."""
+    date, or a column of dates; None when the order has none) and linked to no order, since
+    another order's note is that technician's."""
     same_visit = Note.service_order_id == order_id
     if work_date is not None:
-        same_visit = or_(same_visit, cast(Note.note_date, Date) == work_date)
+        same_visit = or_(
+            same_visit,
+            and_(
+                cast(Note.note_date, Date) == work_date,
+                Note.service_order_id.is_(None),
+                func.coalesce(Note.pestpac_order_id, 0) == 0,
+            ),
+        )
     return and_(
         Note.location_id == location_id,
         Note.note_code.in_(SERVICE_NOTE_CODES),
@@ -90,12 +104,18 @@ def _visit_note(order_id: Any, location_id: Any, work_date: Any) -> ColumnElemen
 
 
 def has_something_to_read() -> ColumnElement[bool]:
-    """For queries over service orders: a technician comment or a visit note to read."""
+    """For queries over service orders: a technician comment, visit note, or inspection comment
+    to read."""
     return or_(
         func.length(func.trim(ServiceOrder.technician_comment)) > 0,
         exists().where(
             _visit_note(
                 ServiceOrder.id, ServiceOrder.location_id, cast(ServiceOrder.work_date, Date)
+            )
+        ),
+        exists().where(
+            conditions.visit_comment(
+                ServiceOrder.id, ServiceOrder.location_id, ServiceOrder.work_date
             )
         ),
     )
@@ -114,7 +134,8 @@ def extraction_input(db: Session, order: ServiceOrder) -> dict[str, Any] | None:
                 .order_by(Note.note_date, Note.id)
             )
         )
-    if not comment and not notes:
+    condition_comments = conditions.visit_comments(db, order)
+    if not comment and not notes and not condition_comments:
         return None
     context = (
         reports.build_context(db, db.get(Location, order.location_id))
@@ -141,6 +162,7 @@ def extraction_input(db: Session, order: ServiceOrder) -> dict[str, Any] | None:
         "technician_comment": (
             {"author": order.technician_name, "text": comment} if comment else None
         ),
+        "condition_comments": conditions.comments_input(condition_comments),
     }
 
 
