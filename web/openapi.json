@@ -7164,6 +7164,10 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "extract_findings": {
+            "type": "boolean",
+            "title": "Extract Findings"
+          },
           "onboarded_at": {
             "type": "string",
             "format": "date-time",
@@ -7314,6 +7318,7 @@
           "name",
           "description",
           "is_active",
+          "extract_findings",
           "onboarded_at",
           "onboarded_by",
           "pestpac_bill_to_code",
@@ -7410,6 +7415,10 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "extract_findings": {
+            "type": "boolean",
+            "title": "Extract Findings"
           },
           "onboarded_at": {
             "type": "string",
@@ -7554,6 +7563,7 @@
           "name",
           "description",
           "is_active",
+          "extract_findings",
           "onboarded_at",
           "onboarded_by",
           "pestpac_bill_to_code",
@@ -7608,6 +7618,10 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "extract_findings": {
+            "type": "boolean",
+            "title": "Extract Findings"
           },
           "onboarded_at": {
             "type": "string",
@@ -7755,6 +7769,7 @@
           "name",
           "description",
           "is_active",
+          "extract_findings",
           "onboarded_at",
           "onboarded_by",
           "pestpac_bill_to_code",
@@ -7809,6 +7824,17 @@
               }
             ],
             "title": "Is Active"
+          },
+          "extract_findings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extract Findings"
           }
         },
         "type": "object",

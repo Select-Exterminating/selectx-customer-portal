@@ -17,6 +17,7 @@ export interface BillToSynced {
   name: string;
   description: string | null;
   is_active: boolean;
+  extract_findings: boolean;
   onboarded_at: string;
   onboarded_by: string | null;
   pestpac_bill_to_code: string | null;

@@ -2,21 +2,21 @@ from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from app import extract_findings, worker
 from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.integrations.openrouter import Usage
 from app.models import (
-    Company,
+    BillTo,
     InspectionFinding,
     InspectionFindingRequest,
     Note,
     ServiceOrder,
 )
 from app.services import findings_extraction, inspection_findings, llm_tasks
-from tests.conftest import ONBOARDED_BILL_TO, pestpac_invoice, pestpac_order
+from tests.conftest import ONBOARDED_BILL_TO, headers_for, pestpac_invoice, pestpac_order
 from tests.test_invoices import ORDER_ID, STORE, _drain_with_order_sync, _invoice_webhook, _order
 from tests.test_service_orders import _sync
 from tests.test_service_reports import DRAFT, _findings
@@ -98,9 +98,15 @@ def _requests():
         ]
 
 
+def _of_company(world):
+    return BillTo.company_id == world.company_a
+
+
 def _enable(world, on=True):
     with SessionLocal() as db:
-        db.execute(update(Company).where(Company.id == world.company_a).values(extract_findings=on))
+        db.execute(
+            update(BillTo).where(BillTo.company_id == world.company_a).values(extract_findings=on)
+        )
         db.commit()
 
 
@@ -316,17 +322,59 @@ def test_backfill_command(world, fake_llm, caplog):
     assert "Would queue: 1" in caplog.text
     assert _requests() == []
     with SessionLocal() as db:
-        assert db.get(Company, world.company_a).extract_findings is False  # dry run
+        assert db.scalars(select(BillTo.extract_findings).where(_of_company(world))).all() == [
+            False
+        ]  # dry run
 
     caplog.clear()
     assert extract_findings.main([*company, "--enable", "--run"]) == 0
+    assert "Extract when posted: 1 of 1 bill-tos" in caplog.text
     assert "Queued: 1" in caplog.text
     assert "Ran 1 requests: 1 extracted, cost $0.0020" in caplog.text
     assert _findings(world)[0][1] == "extraction"
     with SessionLocal() as db:
-        assert db.get(Company, world.company_a).extract_findings is True
+        assert db.scalars(select(BillTo.extract_findings).where(_of_company(world))).all() == [True]
 
     caplog.clear()
     assert extract_findings.main(company) == 0  # current findings: nothing to queue
     assert "Already have findings: 1" in caplog.text
     assert "Queued: 0" in caplog.text
+
+
+def test_only_the_bill_tos_with_it_on_queue_their_posted_orders(world):
+    with SessionLocal() as db:
+        off = BillTo(
+            operator_id=world.op_a,
+            company_id=world.company_a,
+            pestpac_bill_to_id=999001,
+            name="Second bill-to",
+        )
+        on = db.get(BillTo, world.bill_to_a)
+        on.extract_findings = True
+        db.add(off)
+        db.flush()
+        order = db.get(ServiceOrder, world.service_order_a)
+        assert findings_extraction.request_if_enabled(db, order, off) is False
+        assert _queued(db) == 0
+        assert findings_extraction.request_if_enabled(db, order, on) is True
+        assert _queued(db) == 1
+        db.rollback()
+
+
+def _queued(db) -> int:
+    return db.scalar(select(func.count()).select_from(InspectionFindingRequest))
+
+
+def test_the_bill_to_api_sets_it_without_queueing_the_backlog(client, world):
+    _worked(world, comment="No activity.")
+    headers = headers_for(client, world.emails["platform_admin"])
+    url = f"/v1/bill-tos/{world.bill_to_a}"
+    assert client.get(url, headers=headers).json()["extract_findings"] is False
+
+    resp = client.patch(url, json={"extract_findings": True}, headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["extract_findings"] is True
+    assert client.get(url, headers=headers).json()["extract_findings"] is True
+    assert _requests() == []  # future orders only
+
+    assert client.patch(url, json={"extract_findings": None}, headers=headers).status_code == 422

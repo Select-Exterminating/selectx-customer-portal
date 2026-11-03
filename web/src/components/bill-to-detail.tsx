@@ -24,9 +24,61 @@ import {
   useBillTosGetBillTo,
   useBillTosListLocations,
   useBillTosRefreshBillTo,
+  useBillTosUpdateBillTo,
 } from "@/lib/api/generated/bill-tos/bill-tos";
 import { usePermissions } from "@/lib/permissions";
 import { useUrlTab } from "@/lib/use-url-tab";
+
+/** Whether this bill-to's orders have findings extracted when they post. Future orders only: the
+ * backlog is queued by `python -m app.extract_findings`. */
+function ExtractFindings({
+  billToId,
+  on,
+  active,
+}: {
+  billToId: string;
+  on: boolean;
+  active: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const update = useBillTosUpdateBillTo({
+    mutation: {
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: getBillTosGetBillToQueryKey(billToId) }),
+    },
+  });
+  return (
+    <section aria-labelledby="extract-findings" className="border border-border bg-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="extract-findings" className="sr-only">
+            Extract findings
+          </h2>
+          <span className="flex items-center gap-2 font-medium">
+            Extract findings
+            {on && <Badge variant="success">Active</Badge>}
+          </span>
+          <p className="text-sm text-muted-foreground">
+            Reads the notes of orders as they post. Sends them to OpenRouter.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!active || update.isPending}
+          onClick={() => update.mutate({ billToId, data: { extract_findings: !on } })}
+        >
+          {on ? "Deactivate" : "Activate"}
+        </Button>
+      </div>
+      {update.isError && (
+        <Alert variant="destructive" className="mt-3">
+          <AlertDescription>{errorMessage(update.error)}</AlertDescription>
+        </Alert>
+      )}
+    </section>
+  );
+}
 
 export function BillToDetail() {
   const { billToId } = useParams<{ billToId: string }>();
@@ -129,6 +181,10 @@ export function BillToDetail() {
         onOrdersSynced={onSynced}
         onLocationSynced={onSyncedLocations}
       />
+
+      {canWrite && (
+        <ExtractFindings billToId={billToId} on={b.extract_findings} active={b.is_active} />
+      )}
 
       {/* Invoiced orders need billing:read; a URL naming it falls back for others. */}
       <Tabs
