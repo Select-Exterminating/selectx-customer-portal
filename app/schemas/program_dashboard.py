@@ -112,7 +112,7 @@ class StoreWatchRow(BaseModel):
 
 
 class ProgramDashboard(BaseModel):
-    """Program results for Select staff, worked out from worked orders and their findings."""
+    """Program results, worked out from worked orders and their findings."""
 
     model_config = _ALL_REQUIRED
 

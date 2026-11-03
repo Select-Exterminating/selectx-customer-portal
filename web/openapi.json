@@ -1442,7 +1442,7 @@
           "dashboard"
         ],
         "summary": "Get Program Dashboard",
-        "description": "Program results, Store Watch, and the risk index, from findings. Select staff only:\nfindings are internal, so company users get 404 here (no company_id is passed).",
+        "description": "Program results, Store Watch, and the risk index, from findings.",
         "operationId": "dashboard-get_program_dashboard",
         "security": [
           {
@@ -13830,7 +13830,7 @@
           "stores"
         ],
         "title": "ProgramDashboard",
-        "description": "Program results for Select staff, worked out from worked orders and their findings."
+        "description": "Program results, worked out from worked orders and their findings."
       },
       "ProgramResults": {
         "properties": {

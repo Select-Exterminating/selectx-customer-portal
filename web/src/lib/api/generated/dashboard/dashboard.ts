@@ -223,8 +223,7 @@ export const getDashboardGetProgramDashboardUrl = (companyId: string,
 }
 
 /**
- * Program results, Store Watch, and the risk index, from findings. Select staff only:
- * findings are internal, so company users get 404 here (no company_id is passed).
+ * Program results, Store Watch, and the risk index, from findings.
  * @summary Get Program Dashboard
  */
 export const dashboardGetProgramDashboard = async (companyId: string,

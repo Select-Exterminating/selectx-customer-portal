@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -22,6 +21,7 @@ import {
   num,
   pct,
 } from "@/components/program-overview";
+import { DashboardLink } from "@/components/dashboard-link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,12 +97,9 @@ function StoreLink({
 }) {
   return (
     <>
-      <Link
-        href={`/locations/${s.location_id}`}
-        className="font-medium text-primary hover:underline"
-      >
+      <DashboardLink href={`/locations/${s.location_id}`} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </Link>
+      </DashboardLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
@@ -627,9 +624,9 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
     <div className="flex flex-col gap-4">
       <Alert>
         <AlertDescription>
-          These milestones are worked out from worked orders. Launch, inspection requested, proposal
-          submitted, and approved aren&apos;t recorded anywhere we can read yet, so they aren&apos;t
-          shown, and the stage is our own reading of the orders.
+          These milestones come from completed service visits. Launch, inspection requested,
+          proposal submitted, and approved aren&apos;t tracked here yet, and each store&apos;s stage
+          is based on its service history.
         </AlertDescription>
       </Alert>
       <TableCard
@@ -796,9 +793,9 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
                 key={s.location_id}
                 className="grid grid-cols-[6rem_1fr_3rem] items-center gap-2 text-sm"
               >
-                <Link href={`/locations/${s.location_id}`} className="text-primary hover:underline">
+                <DashboardLink href={`/locations/${s.location_id}`}>
                   {s.store_number ? `#${s.store_number}` : s.name}
-                </Link>
+                </DashboardLink>
                 <span
                   aria-hidden
                   className="h-3"
@@ -917,9 +914,9 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
     <div className="flex flex-col gap-6">
       <Alert>
         <AlertDescription>
-          The customer&apos;s own risk scores and priority lists (service tickets, closures, EcoLab
-          findings, RiskKey level) haven&apos;t been loaded, so the comparison of their score
-          against field findings isn&apos;t available yet.
+          This company&apos;s own risk scores and priority lists (service tickets, closures, outside
+          inspection findings, risk ratings) haven&apos;t been loaded, so they can&apos;t be
+          compared with field findings yet.
         </AlertDescription>
       </Alert>
       <ChartGrid>
@@ -1064,7 +1061,8 @@ function Executive({ d }: { d: ProgramTabs }) {
         </h2>
         <div aria-hidden className="mt-4 h-1 w-16 bg-highlight" />
         <p className="mt-4 max-w-3xl text-sm">
-          Every figure here is calculated from worked orders and findings, through {day(e.through)}.
+          Every figure here is calculated from completed service visits and their findings, through{" "}
+          {day(e.through)}.
         </p>
       </section>
 
@@ -1100,7 +1098,7 @@ function Executive({ d }: { d: ProgramTabs }) {
           />
           <ChartCard
             title="Visits by month"
-            description="A location's worked orders on one date count as one visit."
+            description="A location's completed orders on one date count as one visit."
             rows={e.months.map((m) => [formatMonth(m.month), integer.format(m.visits)])}
           >
             <ChartContainer config={programMonthConfig} className="aspect-auto h-64 w-full">

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -14,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { DashboardLink } from "@/components/dashboard-link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -374,12 +374,9 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
   return (
     <tr className="align-top">
       <td className="p-3">
-        <Link
-          href={`/locations/${s.location_id}`}
-          className="font-medium text-primary hover:underline"
-        >
+        <DashboardLink href={`/locations/${s.location_id}`} className="font-medium">
           {s.store_number ? `#${s.store_number}` : s.name}
-        </Link>
+        </DashboardLink>
         <span className="block text-xs text-muted-foreground">
           {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
         </span>
@@ -810,7 +807,7 @@ const coverageConfig = {
   remaining: { label: "Remaining", color: "var(--muted)" },
 } satisfies ChartConfig;
 
-/** The program overview for Select staff (findings are internal), in the RAMP portal's layout. */
+/** The program overview, in the RAMP portal's layout. */
 export function ProgramOverview({
   companyId,
   billToId,

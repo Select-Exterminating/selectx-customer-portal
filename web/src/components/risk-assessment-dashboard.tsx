@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { DashboardLink } from "@/components/dashboard-link";
 import { BAND_COLOR, day, Eyebrow, pct } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -87,12 +87,9 @@ function SimpleCard({
 function StoreCell({ s }: { s: AssessedStore }) {
   return (
     <>
-      <Link
-        href={`/risk-inspections/${s.inspection_id}`}
-        className="font-medium text-primary hover:underline"
-      >
+      <DashboardLink href={`/risk-inspections/${s.inspection_id}`} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </Link>
+      </DashboardLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
@@ -367,12 +364,12 @@ function Findings({ scope }: { scope: Scope }) {
               {(data?.items ?? []).map((f, i) => (
                 <tr key={`${f.inspection_id}-${f.zone}-${f.kind}-${i}`} className="align-top">
                   <td className="p-3 whitespace-nowrap">
-                    <Link
+                    <DashboardLink
                       href={`/risk-inspections/${f.inspection_id}`}
-                      className="font-medium text-primary hover:underline"
+                      className="font-medium"
                     >
                       {f.store_number ? `#${f.store_number}` : f.name}
-                    </Link>
+                    </DashboardLink>
                   </td>
                   <td className="p-3 whitespace-nowrap">{day(f.assessed_on)}</td>
                   <td className="p-3">{f.zone}</td>
@@ -471,10 +468,9 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
         <p className="mt-4 max-w-3xl text-sm">
           Each assessment walks the restaurant zone by zone and scores rodent activity, pest
           activity, structural integrity, and sanitation from 1 (low) to 5 (critical).{" "}
-          {integer.format(d.assessments)} assessments, {day(d.first)} to {day(d.last)}, from
-          GoCanvas.
+          {integer.format(d.assessments)} assessments, {day(d.first)} to {day(d.last)}.
           {d.unlinked > 0 &&
-            ` ${integer.format(d.unlinked)} more aren't matched to a store and aren't counted.`}
+            ` ${integer.format(d.unlinked)} more aren't linked to a store yet, so they aren't counted.`}
         </p>
       </section>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

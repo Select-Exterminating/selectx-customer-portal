@@ -170,7 +170,7 @@ export function RiskMap({
       </svg>
       {unmapped.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Not on the map, PestPac&apos;s coordinates are missing or wrong:{" "}
+          Not on the map because their location details need correcting:{" "}
           {unmapped.map((s) => (s.store_number ? `#${s.store_number}` : s.name)).join(", ")}.
         </p>
       )}

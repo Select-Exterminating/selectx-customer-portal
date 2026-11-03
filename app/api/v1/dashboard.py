@@ -53,29 +53,31 @@ def get_program_dashboard(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    """Program results, Store Watch, and the risk index, from findings. Select staff only:
-    findings are internal, so company users get 404 here (no company_id is passed)."""
-    company = db.get(Company, company_id)
-    if company is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    scope.require(Perm.dashboards_read, company.operator_id, read_perm=Perm.companies_read)
-    if bill_to_id is not None:
-        bill_to = db.get(BillTo, bill_to_id)
-        if bill_to is None or bill_to.company_id != company.id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    """Program results, Store Watch, and the risk index, from findings."""
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_metrics.program_dashboard(
         db, company.id, bill_to_id=bill_to_id, state=state, today=date.today()
     )
 
 
-def _staff_company(
-    db: Session, scope: AccessScope, company_id: uuid.UUID, bill_to_id: uuid.UUID | None
+def _scoped_company(
+    db: Session,
+    scope: AccessScope,
+    company_id: uuid.UUID,
+    bill_to_id: uuid.UUID | None,
+    *,
+    company_users: bool,
 ) -> Company:
-    """The company, for its program tabs: Select staff only, as findings are internal."""
+    """The company, for a dashboard route. `company_users` lets the company's own users in."""
     company = db.get(Company, company_id)
     if company is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    scope.require(Perm.dashboards_read, company.operator_id, read_perm=Perm.companies_read)
+    scope.require(
+        Perm.dashboards_read,
+        company.operator_id,
+        read_perm=Perm.companies_read,
+        company_id=company.id if company_users else None,
+    )
     if bill_to_id is not None:
         bill_to = db.get(BillTo, bill_to_id)
         if bill_to is None or bill_to.company_id != company.id:
@@ -92,7 +94,7 @@ def get_program_tabs(
     scope: AccessScope = Depends(get_scope),
 ):
     """Rodent activity, structural, sanitation and pests, tracker, and executive review."""
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.program_tabs(
         db,
         company.id,
@@ -114,7 +116,7 @@ def get_risk_assessment_dashboard(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.risk_assessment_dashboard(
         db, company.id, bill_to_id=bill_to_id, state=state
     )
@@ -136,7 +138,7 @@ def get_risk_assessment_findings(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.assessment_findings(
         db,
         company.id,
@@ -161,7 +163,8 @@ def get_report_library(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    # Staff only: company users can't open report PDFs yet.
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=False)
     return program_tabs.report_library(
         db, company.id, bill_to_id=bill_to_id, state=state, q=q, limit=limit, offset=offset
     )
