@@ -263,9 +263,7 @@ export function OnboardBillTo({
       {result && !lookup.isFetching && (
         <div className="flex flex-col gap-4 border-t border-border pt-4">
           <div className="flex items-center gap-2">
-            <span className="font-heading text-lg font-medium">
-              BillToID {result.details.pestpac_bill_to_id}
-            </span>
+            <span className="text-lg font-bold">BillToID {result.details.pestpac_bill_to_id}</span>
             {result.onboarded_bill_to_id && (
               <Badge variant="warning">
                 {onboardedHere ? "Already onboarded here" : "Onboarded to another company"}

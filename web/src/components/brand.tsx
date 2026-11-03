@@ -3,15 +3,15 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-// The logo has black lettering on transparency: place it on light surfaces only.
+// The logo has white lettering on transparency: place it on ink only.
 export function BrandLogo({ className, href = "/" }: { className?: string; href?: string }) {
   return (
     <Link href={href} className={cn("inline-flex shrink-0", className)}>
       <Image
-        src="/brand/select-exterminating-logo.webp"
+        src="/brand/select-logo-white.png"
         alt="Select Exterminating"
-        width={768}
-        height={214}
+        width={900}
+        height={250}
         priority
         className="h-8 w-auto"
       />
@@ -19,7 +19,7 @@ export function BrandLogo({ className, href = "/" }: { className?: string; href?
   );
 }
 
-/** Black statement band with a gold rule (docs/design-guidance.md §3, §6). */
+/** A statement band on ink, as on the dashboards (docs/design-guidance.md §9). */
 export function BrandBand({
   title,
   children,
@@ -36,8 +36,7 @@ export function BrandBand({
         className,
       )}
     >
-      <h1 className="max-w-md text-4xl sm:text-5xl">{title}</h1>
-      <div aria-hidden className="mt-6 h-1 w-16 bg-highlight" />
+      <h1 className="max-w-md text-3xl sm:text-4xl">{title}</h1>
       {children && <div className="mt-6 max-w-md text-lg leading-relaxed">{children}</div>}
     </section>
   );
@@ -53,8 +52,8 @@ export function ProofPoints() {
       ].map(([value, label]) => (
         <div key={label}>
           <dt className="sr-only">{label}</dt>
-          <dd className="font-heading text-3xl font-bold text-highlight">{value}</dd>
-          <dd className="text-sm">{label}</dd>
+          <dd className="text-3xl font-bold text-highlight tabular-nums">{value}</dd>
+          <dd className="text-sm text-ink-muted">{label}</dd>
         </div>
       ))}
     </dl>

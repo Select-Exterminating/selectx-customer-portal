@@ -47,7 +47,7 @@ export function ChangePasswordForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Change password</CardTitle>
+        <CardTitle>Change Password</CardTitle>
         <CardDescription>
           {me?.must_change_password
             ? "You signed in with a temporary password. Choose a new one to continue."

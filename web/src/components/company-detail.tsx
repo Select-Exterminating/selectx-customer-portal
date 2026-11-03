@@ -126,14 +126,14 @@ export function CompanyDetail() {
         <TabsList>
           <TabsTrigger value="bill-tos">Bill-tos</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
-          <TabsTrigger value="posted">Posted service orders</TabsTrigger>
+          <TabsTrigger value="posted">Posted Service Orders</TabsTrigger>
           {can("billing:read", c.operator_id) && (
-            <TabsTrigger value="invoiced">Invoiced orders</TabsTrigger>
+            <TabsTrigger value="invoiced">Invoiced Orders</TabsTrigger>
           )}
-          <TabsTrigger value="open">Open orders</TabsTrigger>
-          <TabsTrigger value="risk">Risk inspections</TabsTrigger>
+          <TabsTrigger value="open">Open Orders</TabsTrigger>
+          <TabsTrigger value="risk">Risk Inspections</TabsTrigger>
           {can("reports:read", c.operator_id) && (
-            <TabsTrigger value="templates">Report templates</TabsTrigger>
+            <TabsTrigger value="templates">Report Templates</TabsTrigger>
           )}
           {can("members:read", c.operator_id) && <TabsTrigger value="members">Members</TabsTrigger>}
         </TabsList>

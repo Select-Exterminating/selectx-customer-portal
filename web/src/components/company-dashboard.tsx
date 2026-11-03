@@ -33,14 +33,14 @@ import { useUrlTab } from "@/lib/use-url-tab";
 
 const PROGRAM_TABS = [
   ["overview", "Overview"],
-  ["executive", "Executive review"],
-  ["assessments", "Risk assessments"],
-  ["tracker", "Store tracker"],
-  ["activity", "Rodent activity"],
+  ["executive", "Executive Review"],
+  ["assessments", "Risk Assessments"],
+  ["tracker", "Store Tracker"],
+  ["activity", "Rodent Activity"],
   ["structural", "Structural"],
-  ["sanitation", "Sanitation & pests"],
+  ["sanitation", "Sanitation & Pests"],
   ["stores", "Stores"],
-  ["risk", "Risk model"],
+  ["risk", "Risk Model"],
 ] as const;
 
 export function CompanyDashboardView() {

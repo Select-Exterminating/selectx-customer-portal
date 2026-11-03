@@ -280,10 +280,11 @@ One application for all user types; separate experiences with route groups, not 
 
 ## UI and Styling
 
-- Brand: Select Exterminating. `docs/design-guidance.md` is the source; §9 "Application UI" defines how the brand maps to app tokens and overrides the marketing-site rules where they conflict (Forest, not Select Green, for buttons; 16px body; sentence-case inline actions). Map colors only through the semantic CSS variables in `web/src/app/globals.css`. Feature code uses semantic utilities such as `bg-primary`, `text-muted-foreground`, `bg-highlight`, never raw hex or palette classes like `bg-green-700`.
+- Brand: Select Exterminating, in the RAMP portal's conventions. `docs/design-guidance.md` §9 "Application UI" is the source and overrides the marketing-site rules in its other sections (Arial, rounded corners, a green accent, no gold). Map colors only through the semantic CSS variables in `web/src/app/globals.css`. Feature code uses semantic utilities such as `bg-primary`, `text-muted-foreground`, `bg-row`, never raw hex or palette classes like `bg-green-700`.
 - Tokens are hex in `:root`; `pnpm lint` runs `pnpm check:contrast`, which fails if a token pair drops below WCAG 2.2 AA. Add a pair there when introducing a new foreground/background combination.
 - Validate text, icon, focus, and interactive-state contrast against WCAG 2.2 AA. Accessibility overrides literal palette use.
 - Keep shadcn primitives in `components/ui`; features compose them rather than modifying them.
+- Tables use `DataTable` and `DataTableFrame` (`@/components/data-table`); figures use `StatTile` (`@/components/stat-tile`). Tabs and card titles are Title Case; everything else is written in sentence case (§9).
 - "Add" forms (operator, company, bill-to onboarding) open from a header button in a dialog (`AddDialog`), not as cards above the lists.
 - Detail pages (company, bill-to, location, service report) return a `trail` of their parents (operator › company › bill-to › location) from FastAPI; pages show it with `Breadcrumbs`, not hand-built back links. Pages beneath a company build theirs from the company's trail. Each page names the browser tab with `useDocumentTitle`.
 - "Home" is `useHomeHref()`: the operators list, or the operator itself for someone who sees one operator and can't add operators.

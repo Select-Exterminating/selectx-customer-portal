@@ -104,44 +104,59 @@ Rules:
 
 ## 9. Application UI (customer portal)
 
-Sections 1–8 describe the marketing site. The portal is a dense, task-focused app, so these rules adapt them. Tokens live in `web/src/app/globals.css`; `pnpm lint` runs `scripts/check-contrast.mjs`, which fails if any token pair drops below WCAG 2.2 AA.
+Sections 1–8 describe the marketing site. The portal follows the RAMP portal's conventions (`../select-ramp-portal/public/index.html`), not those sections, where they differ: Arial, rounded corners, a green accent, and no gold. Tokens live in `web/src/app/globals.css`; `pnpm lint` runs `scripts/check-contrast.mjs`, which fails if any token pair drops below WCAG 2.2 AA.
 
-**Color mapping (semantic tokens → brand)**
+**Color mapping (semantic tokens → values)**
 
 | Token | Value | Why |
 |---|---|---|
-| `primary` | Forest `#186839` (hover `#11502B`) | App buttons use 14–16px text; white on Select Green (3.87:1) only passes for large text. Forest is 6.82:1. |
-| `brand-green` | Select Green `#2B935C` | Logo-adjacent and large display use only. |
-| `secondary` | Charcoal `#353E43` (hover `#2A3135`) | Secondary buttons. |
-| `highlight` / `warning` | Select Gold `#FDCF0E` with Ink `#171C1A` text | Rules, badges, stat numbers on black. Never text on white (1.49:1). |
-| `foreground` | Body Text `#333333` | |
-| `muted` | Paper `#F8F7F7` | App page background; cards are white. |
-| `muted-foreground` | `#646967` | Stone (`#878B89`) is 3.45:1, too light for small text. |
-| `border` | Mist `#D9D9D9` | Decorative dividers only. |
-| `input` | Stone `#878B89` | Form-control borders need 3:1. |
-| `ring` | Forest `#186839` | Focus indicator (Gold on white is invisible). |
-| `destructive` | `#B42318` (tint `#FCEBE9`) | Errors and destructive actions; not part of the marketing palette. |
-| `success` | Forest on tint `#E6F2EB` | Status only. Never a filled green chip, so status can't be mistaken for a button. |
-| `pending` | Charcoal on tint `#DDE2E6` | In-progress status (Open, Draft, Queued, Syncing). Replaces filled Charcoal chips, which read as secondary buttons. |
-| `ink` | `#171C1A` | Black statement bands. |
+| `primary` | `#0F7D3F` (hover `#0B6432`) | The RAMP portal's `#108644` is 4.22:1 on the page grey, so small text and links use this slightly darker green. |
+| `chart-1`, `risk-controlled` | `#108644` | The RAMP portal's green, for fills, rules, and charts. |
+| `secondary` | Charcoal `#1A1A1A` (hover `#2C2C2C`) | Secondary buttons and table header rows. |
+| `ink` | `#1A1A1A`, with `ink-glow` `#24372B` | The header banner and statement bands. |
+| `ink-muted` | `#B9BDB7` | Secondary text on ink. |
+| `highlight` | `#3FBF5F` | Emphasis on ink only. |
+| `brand-green` | `#2F9E44` | Eyebrows and tile rules on ink only (3.45:1 on white). |
+| `foreground` | `#1A1A1A` | |
+| `muted` | `#F3F4F2` | App page background; cards are white. |
+| `row` | `#F7F8F6` | Striped table rows. |
+| `muted-foreground` | `#5E6461` | |
+| `border` | `#E1E4E0` | Decorative dividers only. |
+| `input` | `#858987` | Form-control borders need 3:1; the RAMP portal's hairline is 1.28:1. |
+| `ring` | `#0F7D3F` | Focus indicator. |
+| `destructive` | `#9E2B20` (tint `#F8E1DE`) | Errors and destructive actions. |
+| `warning` | `#805C0C` text (`warning-foreground`) on tint `#FBF1DA` (`warning`) | Needs attention. |
+| `success` | `#0F7D3F` on tint `#E7F1EB` | Status only. Never a filled green chip, so status can't be mistaken for a button. |
+| `pending` | `#3F4442` on tint `#E4E7E3` | In-progress status (Open, Draft, Queued, Syncing). |
+| `risk-*` | Critical `#C0392B`, High `#E07B24`, Elevated `#C9971C`, Controlled `#108644` | Risk and activity fills. High and Elevated take dark text: white fails AA on both. Each has a `-foreground` token. |
 
-**Typography:** Oswald 700 uppercase for page titles (`h1`, `h2`, styled globally); Oswald 500 for card titles; Lato for everything else. Body is 16px (`text-base`) and dense lists/labels are 14px, not the site's 18px. Lato replaces "system sans" on buttons, so there are exactly two families.
+**Typography:** Arial throughout. Body is 14px (`text-sm`); tables, captions, and notes are 12px. Page titles (`h1`) are bold and uppercase; section headings are bold, as written; card titles are bold 15px.
 
-**Buttons:** primary and secondary are uppercase, bold, square. Ghost, outline, and link actions (Remove, Deactivate, Test connection) stay sentence case so rows of inline actions remain scannable.
+**Case:** Title Case for tabs and card titles, with small words lowercase unless first or last (a, and, by, of, vs., and so on). Sentence case for buttons, labels, table headers, notes, and body text. Eyebrows are uppercase with wide tracking.
 
-**Tabs:** `@/components/page-tabs`, not `components/ui/tabs` directly: shadcn's line style, a full-width Mist rule under the list, inactive labels in `muted-foreground` (the primitive's 60% foreground fails AA on Paper), and the active tab in body text with a Forest underline.
+**Buttons:** primary and secondary are bold. Ghost, outline, and link actions are regular weight.
 
-**Badges:** one meaning per style.
+**Tabs:** `@/components/page-tabs`, not `components/ui/tabs` directly: shadcn's line style, a full-width rule under the list, inactive labels in `muted-foreground`, and the active tab bold green with a green underline.
+
+**Tables:** `DataTable` and `DataTableFrame` from `@/components/data-table`: a sticky charcoal header row, striped rows, 12px tabular text. Don't style a table by hand.
+
+**Stat tiles:** `StatTile` from `@/components/stat-tile` inside a `dl`: a 3px green top rule, a small label, a bold 28px value, and an optional note.
+
+**Statement bands:** dashboard tabs open with `STATEMENT_BAND`: the ink gradient, a `brand-green` eyebrow, a bold headline with `highlight` emphasis, and `ink-muted` notes. Tiles on a band are translucent with a `brand-green` top rule.
+
+**Badges:** one meaning per style, in a pill.
 - State of a record or job: `pending` (in progress or waiting: Open, Draft, Queued, Syncing, Received), `success` (done: Worked, Final, Synced, Verified, Processed), `warning` (needs attention: Partly synced, Not verified, Inactive in PestPac, medium severity, a balance), `destructive` (failed, invalid, high severity).
 - Finished history and plain labels: `outline` (Billed, Superseded, Inactive, Deleted; document type, category, On portal, revision, "You").
-- Never `default` or `secondary` (filled Forest or Charcoal): they're the button colours. Sync statuses also carry an icon, since they're scanned in passing.
+- Never `default` or `secondary` (filled green or charcoal): they're the button colours. Sync statuses also carry an icon, since they're scanned in passing. Store Watch's attention pills carry a dot.
 
-**Shape:** `--radius: 0`. Every component radius derives from it, so the whole UI is square.
+**Shape:** `--radius: 0.375rem` (6px). Every component radius derives from it.
 
-**Logo:** `web/public/brand/select-exterminating-logo.webp` (black lettering on transparency) goes on white surfaces only. The header has a 4px Gold bottom rule.
+**Logo:** `web/public/brand/select-logo-white.png` (white lettering on transparency) goes on ink only. The header is an ink banner with a 4px green bottom rule (`chart-1`).
 
-**Public pages:** the login and landing pages use a black (`ink`) statement band with a white Oswald headline, a Gold rule, and Gold proof-point numbers, next to the form on Paper.
+**Public pages:** the login and landing pages use the same banner and an ink statement band with a white headline and `highlight` proof-point numbers, next to the form.
+
+**Co-branding:** the RAMP portal's Chipotle watermark and badge aren't used here: the app serves every customer.
 
 **Favicon:** the site's own icons (`cropped-…-VIVID-GREEN` 32/180/192px from selectexterminating.com), installed as `web/src/app/icon1.png`, `icon2.png`, and `apple-icon.png`.
 
-**Not yet defined:** a dark theme (Select Green on Ink is 4.46:1, just under AA for text), an SVG logo, and a light-on-dark logo.
+**Not yet defined:** a dark theme.

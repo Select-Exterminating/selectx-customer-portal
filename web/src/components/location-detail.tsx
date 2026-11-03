@@ -135,7 +135,7 @@ export function LocationDetail() {
           </TabsTrigger>
           <TabsTrigger value="conditions">Conditions</TabsTrigger>
           <TabsTrigger value="areas">Areas</TabsTrigger>
-          <TabsTrigger value="risk">Risk inspections</TabsTrigger>
+          <TabsTrigger value="risk">Risk Inspections</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           {canBilling && <TabsTrigger value="invoices">Invoices</TabsTrigger>}
           <TabsTrigger value="notes">
@@ -272,7 +272,7 @@ export function LocationDetail() {
             </Alert>
           )}
           {notes.data && (
-            <div className="border border-border bg-card">
+            <div className="rounded-lg border border-border bg-card">
               <NoteList
                 notes={notes.data.data}
                 empty="No notes from PestPac yet. They're collected when orders and notes sync."

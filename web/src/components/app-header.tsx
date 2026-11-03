@@ -30,7 +30,7 @@ export function AppHeader() {
   };
 
   return (
-    <header className="border-b-4 border-highlight bg-background">
+    <header className="border-b-4 border-chart-1 bg-ink text-white">
       <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6">
         <nav className="flex shrink-0 items-center gap-6">
           <BrandLogo href={home} />
@@ -39,7 +39,7 @@ export function AppHeader() {
             !me?.must_change_password && (
               <Link
                 href="/operators"
-                className="hidden font-heading text-sm font-medium tracking-wide text-foreground uppercase hover:text-primary sm:inline"
+                className="hidden text-sm font-bold text-white hover:text-highlight sm:inline"
               >
                 Operators
               </Link>
@@ -51,8 +51,14 @@ export function AppHeader() {
           </div>
         )}
         <div className="flex shrink-0 items-center gap-3">
-          {me && <span className="hidden text-sm text-muted-foreground lg:inline">{me.email}</span>}
-          <Button variant="ghost" size="sm" onClick={logout} aria-label="Sign out">
+          {me && <span className="hidden text-sm text-ink-muted lg:inline">{me.email}</span>}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-ink-muted hover:bg-white/10 hover:text-white"
+            onClick={logout}
+            aria-label="Sign out"
+          >
             <LogOut aria-hidden />
             <span className="hidden sm:inline">Sign out</span>
           </Button>

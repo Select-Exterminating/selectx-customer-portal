@@ -35,7 +35,7 @@ export function LocationServiceReports({
         </p>
       )}
       {reports.data && reports.data.data.length > 0 && (
-        <ul className="divide-y divide-border border border-border">
+        <ul className="divide-y divide-border rounded-lg border border-border">
           {reports.data.data.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center gap-2 p-3 text-sm">
               <Link

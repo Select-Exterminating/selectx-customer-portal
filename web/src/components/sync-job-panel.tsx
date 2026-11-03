@@ -349,7 +349,10 @@ export function PestPacSync({
   onLocationSynced: () => void;
 }) {
   return (
-    <section aria-labelledby="pestpac-sync" className="border border-border bg-card px-4 py-1">
+    <section
+      aria-labelledby="pestpac-sync"
+      className="rounded-lg border border-border bg-card px-4 py-1"
+    >
       <h2 id="pestpac-sync" className="sr-only">
         Sync from PestPac
       </h2>

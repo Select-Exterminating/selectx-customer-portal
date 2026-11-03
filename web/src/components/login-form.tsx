@@ -65,7 +65,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle>Sign In</CardTitle>
         <CardDescription>Use your portal email and password.</CardDescription>
       </CardHeader>
       <CardContent>

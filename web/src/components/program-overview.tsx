@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { DataTable, DataTableFrame } from "@/components/data-table";
 import { DashboardLink } from "@/components/dashboard-link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import {
 } from "@/lib/api/generated/dashboard/dashboard";
 import type { LabelCount, ProgramDashboard, StoreWatchRow } from "@/lib/api/generated/model";
 import { RiskMap } from "@/components/risk-map";
+import { StatTile } from "@/components/stat-tile";
 import { cn } from "@/lib/utils";
 
 const integer = new Intl.NumberFormat();
@@ -60,17 +62,23 @@ export function formatMonth(month: string) {
 }
 
 export const BAND_COLOR: Record<string, string> = {
-  Critical: "var(--destructive)",
-  High: "var(--highlight)",
-  Elevated: "var(--chart-5)",
-  Controlled: "var(--chart-1)",
+  Critical: "var(--risk-critical)",
+  High: "var(--risk-high)",
+  Elevated: "var(--risk-elevated)",
+  Controlled: "var(--risk-controlled)",
   "No Service Data": "var(--border)",
 };
+const BAND_CHIP: Record<string, string> = {
+  Critical: "bg-risk-critical text-risk-critical-foreground",
+  High: "bg-risk-high text-risk-high-foreground",
+  Elevated: "bg-risk-elevated text-risk-elevated-foreground",
+  Controlled: "bg-risk-controlled text-risk-controlled-foreground",
+};
 const ACTIVITY_COLOR = [
-  "var(--chart-1)",
-  "var(--chart-5)",
-  "var(--highlight)",
-  "var(--destructive)",
+  "var(--risk-controlled)",
+  "var(--risk-elevated)",
+  "var(--risk-high)",
+  "var(--risk-critical)",
 ];
 const ACTIVITY_LABEL = ["None", "Low", "Moderate", "Heavy"];
 const ATTENTION_BADGE = {
@@ -80,7 +88,11 @@ const ATTENTION_BADGE = {
   "Not Yet Serviced": { variant: "outline", label: "Not yet serviced" },
 } as const;
 
-/** An uppercase label above a section, like the RAMP portal's. */
+/** The dark band that opens a dashboard tab. */
+export const STATEMENT_BAND =
+  "relative overflow-hidden rounded-xl bg-[radial-gradient(120%_140%_at_100%_0%,var(--ink-glow)_0%,var(--ink)_60%)] px-6 py-8 text-white sm:px-8";
+
+/** An uppercase label above a section. */
 export function Eyebrow({
   children,
   className,
@@ -120,8 +132,8 @@ function ResultsBand({ d }: { d: ProgramDashboard }) {
     [pct(r.clean_after), "", "Clean visits after stabilizing", "median store, they stay clean"],
   ];
   return (
-    <section className="bg-ink px-6 py-8 text-white sm:px-8">
-      <Eyebrow className="text-highlight">
+    <section className={STATEMENT_BAND}>
+      <Eyebrow className="text-brand-green">
         Program results · every store measured from its first service
       </Eyebrow>
       <h2 className="mt-3 max-w-4xl text-2xl leading-snug sm:text-3xl">
@@ -136,21 +148,22 @@ function ResultsBand({ d }: { d: ProgramDashboard }) {
         )}
         .
       </h2>
-      <div aria-hidden className="mt-4 h-1 w-16 bg-highlight" />
-      <p className="mt-4 max-w-3xl text-sm">
+      <p className="mt-3 max-w-3xl text-sm text-ink-muted">
         Stores started on different dates, so every store is lined up on its own day one. Stabilized
         means 28+ days since the last rodent activity, with every visit since clean.
       </p>
       <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {tiles.map(([value, unit, label, note]) => (
-          <div key={label} className="border border-white/25 p-4">
-            <dt className="sr-only">{label}</dt>
-            <dd className="font-heading text-3xl font-bold text-highlight">
+          <div
+            key={label}
+            className="flex flex-col rounded-lg border border-t-[3px] border-white/10 border-t-brand-green bg-white/5 px-4 py-3.5"
+          >
+            <dt className="order-2 mt-2 text-xs font-bold">{label}</dt>
+            <dd className="order-1 text-[40px] leading-none font-bold tabular-nums">
               {value}
-              {unit && <span className="ml-1 text-base font-normal text-white">{unit}</span>}
+              {unit && <span className="ml-1 text-lg font-bold text-ink-muted">{unit}</span>}
             </dd>
-            <dd className="mt-1 text-sm font-bold">{label}</dd>
-            <dd className="text-xs">{note}</dd>
+            <dd className="order-3 mt-1 text-xs text-ink-muted">{note}</dd>
           </div>
         ))}
       </dl>
@@ -158,31 +171,57 @@ function ResultsBand({ d }: { d: ProgramDashboard }) {
   );
 }
 
+/** The last rated visits as a line of dots: higher and warmer means more activity. */
 function Spark({ scores }: { scores: number[] }) {
   if (scores.length === 0) return <span className="text-muted-foreground">—</span>;
+  const x = (i: number) => 4 + i * 7;
+  const y = (score: number) => 18 - score * 5;
   return (
-    <span
-      className="inline-flex h-5 items-end gap-0.5"
+    <svg
+      width={x(scores.length - 1) + 5}
+      height={22}
       role="img"
       aria-label={`Last ${scores.length} rated visits: ${scores.map((s) => ACTIVITY_LABEL[s]).join(", ")}`}
     >
+      <polyline
+        points={scores.map((s, i) => `${x(i)},${y(s)}`).join(" ")}
+        fill="none"
+        stroke="var(--chart-5)"
+        strokeWidth={1.2}
+      />
       {scores.map((s, i) => (
-        <span
+        <circle
           key={i}
-          className="w-1.5"
-          style={{ height: `${25 + s * 25}%`, background: ACTIVITY_COLOR[s] }}
+          cx={x(i)}
+          cy={y(s)}
+          r={i === scores.length - 1 ? 3 : 2}
+          fill={ACTIVITY_COLOR[s]}
         />
       ))}
-    </span>
+    </svg>
   );
 }
 
 const WATCH_FILTERS = [
-  ["Escalated", "Escalated", "Recurrence after stabilization or repeat zones"],
-  ["Watch", "Watch", "Recent activity, rising trend, open exclusion or sanitation items"],
-  ["Stable", "Holding baseline", "No flags in recent reports"],
-  ["regress", "Recurrences", "Stabilized, then activity again in the last 45 days"],
+  ["Escalated", "Escalated", "Recurrence after stabilization or repeat zones", "destructive"],
+  [
+    "Watch",
+    "Watch",
+    "Recent activity, rising trend, open exclusion or sanitation items",
+    "warning",
+  ],
+  ["Stable", "Holding baseline", "No flags in recent reports", "success"],
+  ["regress", "Recurrences", "Stabilized, then activity again in the last 45 days", "destructive"],
 ] as const;
+const WATCH_TILE = {
+  destructive: {
+    value: "text-destructive",
+    tile: "border-t-risk-critical",
+    on: "bg-destructive-muted",
+  },
+  warning: { value: "text-warning-foreground", tile: "border-t-risk-elevated", on: "bg-warning" },
+  success: { value: "text-success", tile: "border-t-risk-controlled", on: "bg-success-muted" },
+} as const;
 
 /** Which stores need attention now, from each store's own reports. */
 const FLAG_RULES = [
@@ -248,7 +287,7 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
     <Card>
       <CardHeader>
         <Eyebrow>Store watch · every store measured against its own baseline</Eyebrow>
-        <CardTitle className="text-xl">Which stores need attention now</CardTitle>
+        <CardTitle className="text-xl">Which Stores Need Attention Now</CardTitle>
         <CardDescription>
           The program restores a store to its operational baseline. Store Watch flags any store that
           isn&apos;t holding it: recurrence after stabilization, activity at the last visit, repeat
@@ -258,7 +297,7 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {WATCH_FILTERS.map(([key, label, note]) => {
+          {WATCH_FILTERS.map(([key, label, note, tone]) => {
             const value = key === "regress" ? d.portfolio.recurrences : (counts[key] ?? 0);
             const active = filter === key;
             return (
@@ -268,14 +307,20 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
                 aria-pressed={active}
                 onClick={() => setFilter(active ? "" : key)}
                 className={cn(
-                  "border border-border p-3 text-left hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  active && "border-primary bg-muted",
+                  "rounded-lg border border-t-[3px] border-border p-3 text-left transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  WATCH_TILE[tone].tile,
+                  active && WATCH_TILE[tone].on,
                 )}
               >
-                <span className="block font-heading text-2xl font-bold">
+                <span
+                  className={cn(
+                    "block text-3xl leading-none font-bold tabular-nums",
+                    WATCH_TILE[tone].value,
+                  )}
+                >
                   {integer.format(value)}
                 </span>
-                <span className="block text-sm font-bold">{label}</span>
+                <span className="mt-1 block text-[13px] font-bold">{label}</span>
                 <span className="block text-xs text-muted-foreground">{note}</span>
               </button>
             );
@@ -318,9 +363,9 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
             {integer.format(rows.length)} of {integer.format(d.stores.length)} stores
           </p>
         </div>
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-muted-foreground">
+        <DataTableFrame>
+          <DataTable>
+            <thead>
               <tr>
                 <th className="p-3 font-medium">Store</th>
                 <th className="p-3 font-medium">Attention</th>
@@ -344,8 +389,8 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataTableFrame>
         {rows.length > 15 && (
           <Button variant="outline" className="self-center" onClick={() => setAll(!all)}>
             {all ? "Show fewer" : `Show all ${integer.format(rows.length)} stores`}
@@ -374,7 +419,7 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
   return (
     <tr className="align-top">
       <td className="p-3">
-        <DashboardLink href={`/locations/${s.location_id}`} className="font-medium">
+        <DashboardLink href={`/locations/${s.location_id}`} className="text-sm font-bold">
           {s.store_number ? `#${s.store_number}` : s.name}
         </DashboardLink>
         <span className="block text-xs text-muted-foreground">
@@ -382,7 +427,14 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
         </span>
       </td>
       <td className="p-3">
-        {badge ? <Badge variant={badge.variant}>{badge.label}</Badge> : s.attention}
+        {badge ? (
+          <Badge variant={badge.variant}>
+            <span aria-hidden className="size-1.5 rounded-full bg-current" />
+            {badge.label}
+          </Badge>
+        ) : (
+          s.attention
+        )}
       </td>
       <td className="p-3">
         <span className="flex flex-wrap gap-1">
@@ -390,7 +442,7 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
           {s.flags.map((f) => (
             <Badge
               key={f.code}
-              variant={f.weight >= 3 ? "destructive" : "outline"}
+              variant={f.weight >= 3 ? "destructive" : f.weight === 2 ? "warning" : "pending"}
               title={f.detail}
             >
               {f.short}
@@ -400,14 +452,14 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
       </td>
       <td className="p-3">{s.tier ?? "—"}</td>
       <td className="p-3 text-right">
-        <span className="inline-flex items-center gap-2 tabular-nums">
-          <span
-            aria-hidden
-            className="size-2.5"
-            style={{ background: BAND_COLOR[s.risk_band] ?? "var(--border)" }}
-          />
+        <span
+          className={cn(
+            "inline-block min-w-[2.1em] rounded px-1.5 py-0.5 text-center font-bold",
+            BAND_CHIP[s.risk_band],
+          )}
+        >
           {s.risk_index ?? "—"}
-          <span className="sr-only">{s.risk_band}</span>
+          <span className="sr-only"> {s.risk_band}</span>
         </span>
       </td>
       <td className="p-3">
@@ -448,7 +500,7 @@ export function ChartCard({
         {children}
         <details className="text-sm">
           <summary className="cursor-pointer text-primary hover:underline">Show table</summary>
-          <table className="mt-2 w-full max-w-sm">
+          <DataTable className="mt-2 max-w-sm">
             <caption className="sr-only">{title}</caption>
             <tbody>
               {rows.map(([label, value]) => (
@@ -460,7 +512,7 @@ export function ChartCard({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </details>
       </CardContent>
     </Card>
@@ -475,7 +527,7 @@ const curveConfig = {
 function ActivityCurve({ d }: { d: ProgramDashboard }) {
   return (
     <ChartCard
-      title="Rodent activity from day one"
+      title="Rodent Activity From Day One"
       description="Share of rated visits finding rodent activity, by two-week period since each store's first visit."
       rows={d.curve.map((c) => [c.label, `${pct(c.activity_rate)} of ${integer.format(c.rated)}`])}
     >
@@ -519,7 +571,7 @@ function EarlyVsLate({ d }: { d: ProgramDashboard }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>First two weeks vs. day 90 onward</CardTitle>
+        <CardTitle>First Two Weeks vs. Day 90 Onward</CardTitle>
         <CardDescription>
           Visits finding rodent activity early in the program and later.
         </CardDescription>
@@ -527,17 +579,15 @@ function EarlyVsLate({ d }: { d: ProgramDashboard }) {
       <CardContent className="flex flex-col gap-3">
         {pairs.map(([label, early, late, note]) => (
           <div key={label} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <div className="border border-border p-3 text-center">
-              <span className="block font-heading text-2xl font-bold">{pct(early)}</span>
+            <div className="rounded-lg border border-border p-3 text-center">
+              <span className="block text-2xl font-bold">{pct(early)}</span>
               <span className="block text-xs text-muted-foreground">First two weeks</span>
             </div>
             <span aria-hidden className="text-muted-foreground">
               →
             </span>
-            <div className="border border-primary bg-muted p-3 text-center">
-              <span className="block font-heading text-2xl font-bold text-primary">
-                {pct(late)}
-              </span>
+            <div className="rounded-lg border border-primary bg-muted p-3 text-center">
+              <span className="block text-2xl font-bold text-primary">{pct(late)}</span>
               <span className="block text-xs text-muted-foreground">Day 90 onward</span>
             </div>
             <span className="col-span-3 text-sm">
@@ -571,7 +621,7 @@ function Buckets({
     >
       {median && (
         <p className="text-sm">
-          <span className="font-heading text-2xl font-bold text-primary">{median}</span>
+          <span className="text-2xl font-bold text-primary">{median}</span>
         </p>
       )}
       <ChartContainer config={storesConfig} className="aspect-auto h-56 w-full">
@@ -591,7 +641,7 @@ function PortfolioMap({ d }: { d: ProgramDashboard }) {
   const rated = d.stores.filter((s) => s.risk_index !== null);
   return (
     <ChartCard
-      title="Portfolio risk map"
+      title="Portfolio Risk Map"
       description="Each store, colored by its RAMP risk index. Click a dot to open the store."
       rows={[...rated]
         .sort((a, b) => (b.risk_index ?? 0) - (a.risk_index ?? 0))
@@ -605,7 +655,11 @@ function PortfolioMap({ d }: { d: ProgramDashboard }) {
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {d.portfolio.bands.map((b) => (
           <li key={b.label} className="inline-flex items-center gap-1.5">
-            <span aria-hidden className="size-2.5" style={{ background: BAND_COLOR[b.label] }} />
+            <span
+              aria-hidden
+              className="size-2.5 rounded-sm"
+              style={{ background: BAND_COLOR[b.label] }}
+            />
             {b.label} · {integer.format(b.stores)}
           </li>
         ))}
@@ -617,7 +671,7 @@ function PortfolioMap({ d }: { d: ProgramDashboard }) {
 function RiskBands({ d }: { d: ProgramDashboard }) {
   return (
     <ChartCard
-      title="Stores by risk band"
+      title="Stores by Risk Band"
       description="Current RAMP risk index: rodent activity (40), open structural vulnerabilities (25), sanitation (20), and secondary pests (15) over the 90 days to each store's latest rated visit."
       rows={d.portfolio.bands.map((b) => [b.label, integer.format(b.stores)])}
     >
@@ -650,7 +704,7 @@ const monthlyConfig = {
 function Monthly({ d }: { d: ProgramDashboard }) {
   return (
     <ChartCard
-      title="Services and rodent activity by month"
+      title="Services and Rodent Activity by Month"
       description="Service visits per month (bars) and the share of rated visits that found activity (line)."
       rows={d.monthly.map((m) => [
         formatMonth(m.month),
@@ -744,11 +798,7 @@ function PortfolioToday({ d }: { d: ProgramDashboard }) {
       <Eyebrow>Portfolio status today</Eyebrow>
       <dl className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {tiles.map(([label, value, note]) => (
-          <div key={label} className="border border-border bg-card p-4">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="font-heading text-2xl font-bold">{value}</dd>
-            <dd className="text-xs text-muted-foreground">{note}</dd>
-          </div>
+          <StatTile key={label} label={label} value={value} note={note} />
         ))}
       </dl>
     </section>
@@ -784,7 +834,7 @@ function AssessmentCoverage({
   }));
   return (
     <ChartCard
-      title="Risk assessment coverage"
+      title="Risk Assessment Coverage"
       description="Locations with a risk assessment, assessed vs. remaining, by state."
       rows={data.map((c) => [c.state, `${c.assessed} of ${c.assessed + c.remaining}`])}
     >

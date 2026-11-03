@@ -48,7 +48,10 @@ function ExtractFindings({
     },
   });
   return (
-    <section aria-labelledby="extract-findings" className="border border-border bg-card px-4 py-3">
+    <section
+      aria-labelledby="extract-findings"
+      className="rounded-lg border border-border bg-card px-4 py-3"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="extract-findings" className="sr-only">
@@ -193,12 +196,12 @@ export function BillToDetail() {
       >
         <TabsList>
           <TabsTrigger value="locations">Locations</TabsTrigger>
-          <TabsTrigger value="posted">Posted service orders</TabsTrigger>
+          <TabsTrigger value="posted">Posted Service Orders</TabsTrigger>
           {can("billing:read", b.operator_id) && (
-            <TabsTrigger value="invoiced">Invoiced orders</TabsTrigger>
+            <TabsTrigger value="invoiced">Invoiced Orders</TabsTrigger>
           )}
-          <TabsTrigger value="open">Open orders</TabsTrigger>
-          <TabsTrigger value="risk">Risk inspections</TabsTrigger>
+          <TabsTrigger value="open">Open Orders</TabsTrigger>
+          <TabsTrigger value="risk">Risk Inspections</TabsTrigger>
         </TabsList>
         <TabsContent value="locations" className="pt-4">
           <LocationsTable locations={locations} exportName={`${b.name} locations`} />

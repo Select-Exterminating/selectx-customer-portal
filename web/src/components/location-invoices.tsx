@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { DataTable } from "@/components/data-table";
 import { formatPestPacDate } from "@/components/service-order-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -77,8 +78,8 @@ export function InvoiceRow({
         </summary>
         <div className="mt-2 flex flex-col gap-3 border-l-2 border-border pl-4 text-sm">
           {i.lines.length > 0 && (
-            <table className="w-full text-left">
-              <thead className="text-xs text-muted-foreground">
+            <DataTable>
+              <thead>
                 <tr>
                   <th className="font-medium">Service</th>
                   <th className="text-right font-medium">Qty</th>
@@ -101,7 +102,7 @@ export function InvoiceRow({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           )}
           <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-3">
             <div>
@@ -151,7 +152,7 @@ export function LocationInvoices({ locationId }: { locationId: string }) {
       )}
       {page && (
         <>
-          <ul className="divide-y divide-border border border-border bg-card">
+          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {page.items.length === 0 && (
               <li className="p-4 text-muted-foreground">
                 No invoices yet. They arrive with PestPac invoice webhooks and order syncs.

@@ -121,7 +121,7 @@ export function LocationConditions({ locationId }: { locationId: string }) {
         </Alert>
       )}
       {list && (
-        <ul className="divide-y divide-border border border-border bg-card">
+        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {list.length === 0 && (
             <li className="p-4 text-muted-foreground">
               No conditions recorded. Sync documents and conditions to fetch open ones from PestPac.

@@ -133,7 +133,7 @@ function Findings({ findings: f }: { findings: InspectionFindingRead }) {
             <h3 className="text-sm font-medium">
               {title} ({items.length})
             </h3>
-            <ul className="divide-y divide-border border border-border">
+            <ul className="divide-y divide-border rounded-lg border border-border">
               {items.map((i, n) => (
                 <li key={n} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
                   <span className="font-medium">{label(i.category)}</span>
@@ -173,7 +173,7 @@ function OrderInvoice({ invoiceId }: { invoiceId: string }) {
     );
   }
   return (
-    <ul className="border border-border">
+    <ul className="rounded-lg border border-border">
       <InvoiceRow invoice={invoice.data.data} />
     </ul>
   );
@@ -281,7 +281,7 @@ export function ServiceOrderDetailPage() {
                   No documents linked to this order or logged that day.
                 </p>
               ) : (
-                <ul className="divide-y divide-border border border-border">
+                <ul className="divide-y divide-border rounded-lg border border-border">
                   {r.documents.map((d) => (
                     <DocumentRow key={d.id} doc={d} extra={d.link === "same_day" && <SameDay />} />
                   ))}
@@ -300,7 +300,7 @@ export function ServiceOrderDetailPage() {
                   No conditions opened or inspected on this order or that day.
                 </p>
               ) : (
-                <ul className="divide-y divide-border border border-border">
+                <ul className="divide-y divide-border rounded-lg border border-border">
                   {r.conditions.map((c) => (
                     <ConditionCard key={c.id} condition={c} extra={CONDITION_LINK[c.link]} />
                   ))}

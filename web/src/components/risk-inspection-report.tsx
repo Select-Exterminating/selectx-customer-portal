@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+import { DataTable } from "@/components/data-table";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { RiskBadge } from "@/components/risk-inspections-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -61,7 +62,7 @@ function ServiceInformation({ report: r }: { report: RiskInspectionDetail }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Service information</CardTitle>
+        <CardTitle>Service Information</CardTitle>
       </CardHeader>
       <CardContent>
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -107,11 +108,11 @@ function ZoneSummary({ zones }: { zones: RiskInspectionZoneRead[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Zone summary</CardTitle>
+        <CardTitle>Zone Summary</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border text-xs text-muted-foreground">
+        <DataTable>
+          <thead>
             <tr>
               <th scope="col" className={TH}>
                 Zone
@@ -148,7 +149,7 @@ function ZoneSummary({ zones }: { zones: RiskInspectionZoneRead[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </CardContent>
     </Card>
   );
@@ -192,11 +193,11 @@ function StationDetails({ zones }: { zones: RiskInspectionZoneRead[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Station details</CardTitle>
+        <CardTitle>Station Details</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[64rem] text-sm">
-          <thead className="border-b border-border text-xs text-muted-foreground">
+        <DataTable className="min-w-[64rem]">
+          <thead>
             <tr>
               <th scope="col" className={TH}>
                 Zone
@@ -222,7 +223,7 @@ function StationDetails({ zones }: { zones: RiskInspectionZoneRead[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </CardContent>
     </Card>
   );
@@ -293,7 +294,7 @@ function MaterialUse({ report: r }: { report: RiskInspectionDetail }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Material use</CardTitle>
+        <CardTitle>Material Use</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -364,7 +365,7 @@ export function RiskInspectionReport() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Notes and images by technician</CardTitle>
+          <CardTitle>Notes and Images by Technician</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {withNotes.map((z) => (
@@ -378,7 +379,7 @@ export function RiskInspectionReport() {
       {r.manager_summary && (
         <Card>
           <CardHeader>
-            <CardTitle>Service manager summary</CardTitle>
+            <CardTitle>Service Manager Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-line">{r.manager_summary}</p>

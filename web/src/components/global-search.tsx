@@ -122,7 +122,7 @@ export function GlobalSearch() {
         placeholder="Search stores, orders…"
         aria-label="Search companies, locations, and orders"
         showTrigger={false}
-        className="w-full"
+        className="w-full bg-card text-foreground"
       >
         <Search
           aria-hidden

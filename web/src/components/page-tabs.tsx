@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * The app's tabs: shadcn's "line" style (an underline, not a raised box) with brand colours.
- * Inactive tabs use muted-foreground, which passes AA on Paper and white (the primitive's
- * foreground at 60% does not); the active tab is body text with a Forest underline.
+ * Inactive tabs use muted-foreground, which passes AA on the page grey and white (the primitive's
+ * foreground at 60% does not); the active tab is bold green with a green underline.
  *
  * Tabs that don't fit (on a phone) scroll sideways rather than overflow the page. A scroll
  * container clips its border, so the divider is an inset shadow the underline sits on.
@@ -33,7 +33,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof UiTabs
   return (
     <UiTabsTrigger
       className={cn(
-        "flex-none px-3 pt-1.5 pb-2 text-muted-foreground after:bottom-0! after:bg-primary hover:text-foreground data-active:text-foreground",
+        "flex-none px-3 pt-1.5 pb-2 text-muted-foreground after:bottom-0! after:bg-primary hover:text-foreground data-active:font-bold data-active:text-primary",
         className,
       )}
       {...props}

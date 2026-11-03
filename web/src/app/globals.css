@@ -7,9 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-lato);
+  --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-heading: var(--font-oswald);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +38,17 @@
   --color-highlight-foreground: var(--highlight-foreground);
   --color-brand-green: var(--brand-green);
   --color-ink: var(--ink);
+  --color-ink-glow: var(--ink-glow);
+  --color-ink-muted: var(--ink-muted);
+  --color-row: var(--row);
+  --color-risk-critical: var(--risk-critical);
+  --color-risk-critical-foreground: var(--risk-critical-foreground);
+  --color-risk-high: var(--risk-high);
+  --color-risk-high-foreground: var(--risk-high-foreground);
+  --color-risk-elevated: var(--risk-elevated);
+  --color-risk-elevated-foreground: var(--risk-elevated-foreground);
+  --color-risk-controlled: var(--risk-controlled);
+  --color-risk-controlled-foreground: var(--risk-controlled-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -63,54 +73,66 @@
 }
 
 :root {
-  /* Select Exterminating brand mapped to semantic tokens. See docs/design-guidance.md.
+  /* The RAMP portal's look mapped to semantic tokens. See docs/design-guidance.md.
      Hex only: scripts/check-contrast.mjs reads these and enforces WCAG AA. */
   --background: #ffffff;
-  --foreground: #333333; /* Body Text */
+  --foreground: #1a1a1a; /* Charcoal */
   --card: #ffffff;
-  --card-foreground: #333333;
+  --card-foreground: #1a1a1a;
   --popover: #ffffff;
-  --popover-foreground: #333333;
-  --primary: #186839; /* Forest: the app's action green (white text passes AA) */
-  --primary-hover: #11502b;
+  --popover-foreground: #1a1a1a;
+  --primary: #0f7d3f; /* the portal's #108644, darkened so small text passes AA on the page grey */
+  --primary-hover: #0b6432;
   --primary-foreground: #ffffff;
-  --secondary: #353e43; /* Charcoal */
-  --secondary-hover: #2a3135;
+  --secondary: #1a1a1a;
+  --secondary-hover: #2c2c2c;
   --secondary-foreground: #ffffff;
-  --muted: #f8f7f7; /* Paper */
-  --muted-foreground: #646967; /* darker than Stone so small text passes AA */
-  --accent: #f1f0f0; /* subtle hover surface (shadcn "accent"), not the brand gold */
-  --accent-foreground: #333333;
-  --highlight: #fdcf0e; /* Select Gold: rules, badges, highlights only */
-  --highlight-foreground: #171c1a; /* Ink */
-  --brand-green: #2b935c; /* Select Green: logo-adjacent and large display use only */
-  --ink: #171c1a;
-  --destructive: #b42318;
+  --muted: #f3f4f2; /* the app's page background; cards are white */
+  --muted-foreground: #5e6461;
+  --accent: #ecf0eb; /* subtle hover surface (shadcn "accent") */
+  --accent-foreground: #1a1a1a;
+  --row: #f7f8f6; /* striped table rows */
+  --highlight: #3fbf5f; /* bright green: emphasis and rules on ink only */
+  --highlight-foreground: #1a1a1a;
+  --brand-green: #2f9e44; /* eyebrows and tile rules on ink only (3.45:1 on white) */
+  --ink: #1a1a1a; /* banners and statement bands */
+  --ink-glow: #24372b; /* the statement band's gradient */
+  --ink-muted: #b9bdb7; /* secondary text on ink */
+  --destructive: #9e2b20;
   --destructive-foreground: #ffffff;
-  --destructive-muted: #fcebe9;
-  --success: #186839;
-  --success-muted: #e6f2eb;
-  --pending: #353e43; /* Charcoal text on a cool grey tint: in-progress states (badges) */
-  --pending-muted: #dde2e6;
-  --warning: #fdcf0e;
-  --warning-foreground: #171c1a;
-  --border: #d9d9d9; /* Mist: decorative dividers */
-  --input: #878b89; /* Stone: form control borders need 3:1 */
-  --ring: #186839;
-  --chart-1: #2b935c;
-  --chart-2: #fdcf0e;
-  --chart-3: #353e43;
-  --chart-4: #186839;
-  --chart-5: #878b89;
-  --radius: 0rem; /* square corners everywhere */
-  --sidebar: #f8f7f7;
-  --sidebar-foreground: #333333;
-  --sidebar-primary: #186839;
+  --destructive-muted: #f8e1de;
+  --success: #0f7d3f;
+  --success-muted: #e7f1eb;
+  --pending: #3f4442;
+  --pending-muted: #e4e7e3;
+  --warning: #fbf1da;
+  --warning-foreground: #805c0c;
+  --border: #e1e4e0; /* decorative dividers */
+  --input: #858987; /* form control borders need 3:1, which the portal's hairline doesn't reach */
+  --ring: #0f7d3f;
+  --chart-1: #108644;
+  --chart-2: #e07b24;
+  --chart-3: #1a1a1a;
+  --chart-4: #2f9e44;
+  --chart-5: #b9bdb7;
+  /* Risk and activity levels, as fills. Text on them uses --risk-*-foreground. */
+  --risk-critical: #c0392b;
+  --risk-critical-foreground: #ffffff;
+  --risk-high: #e07b24;
+  --risk-high-foreground: #1a1a1a;
+  --risk-elevated: #c9971c;
+  --risk-elevated-foreground: #1a1a1a;
+  --risk-controlled: #108644;
+  --risk-controlled-foreground: #ffffff;
+  --radius: 0.375rem; /* 6px */
+  --sidebar: #f3f4f2;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #0f7d3f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f0f0;
-  --sidebar-accent-foreground: #333333;
-  --sidebar-border: #d9d9d9;
-  --sidebar-ring: #186839;
+  --sidebar-accent: #ecf0eb;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e1e4e0;
+  --sidebar-ring: #0f7d3f;
 }
 
 /* Dark mode is not enabled yet (full tier). These are shadcn defaults, not brand-reviewed. */
@@ -162,12 +184,12 @@
   html {
     @apply font-sans;
   }
-  /* Headlines: Oswald, uppercase, tight leading (docs/design-guidance.md §4). */
-  h1,
-  h2 {
-    @apply font-heading leading-[1.1] font-bold tracking-normal uppercase;
+  /* Page titles are bold and uppercase; section headings are bold, as written. */
+  h1 {
+    @apply leading-[1.15] font-bold tracking-[0.02em] uppercase;
   }
+  h2,
   h3 {
-    @apply font-heading leading-[1.15] font-bold;
+    @apply leading-[1.2] font-bold;
   }
 }

@@ -114,7 +114,7 @@ function AddMemberForm({ add, roleScope }: { add: Members["add"]; roleScope: Rol
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add member</CardTitle>
+        <CardTitle>Add Member</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <form

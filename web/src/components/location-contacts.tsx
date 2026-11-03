@@ -30,13 +30,13 @@ export function LocationContacts({ locationId }: { locationId: string }) {
   const list = contacts.data.data;
   if (list.length === 0) {
     return (
-      <p className="border border-border bg-card p-4 text-muted-foreground">
+      <p className="rounded-lg border border-border bg-card p-4 text-muted-foreground">
         No contacts yet. They come from the customer&apos;s Restaurant Leader Report.
       </p>
     );
   }
   return (
-    <ul className="divide-y divide-border border border-border bg-card">
+    <ul className="divide-y divide-border rounded-lg border border-border bg-card">
       {list.map((c) => (
         <li key={c.id} className="grid gap-x-6 gap-y-1 p-4 text-sm sm:grid-cols-3">
           <div>
