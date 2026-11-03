@@ -21,7 +21,7 @@ from app.integrations.openrouter import Usage
 from app.models import InspectionFinding, InspectionFindingItem, Zone
 
 # Bump when INSTRUCTIONS or FindingsOut change in a way that changes what's extracted.
-METHOD_VERSION = 4
+METHOD_VERSION = 5
 
 VisitType = Literal[
     "risk_assessment",
@@ -197,6 +197,17 @@ RULES = """\
   basement: basement, cellar, crawl space.
   ceiling_voids: ceiling voids, drop ceiling, wall paneling and voids, dumbwaiter or elevator.
   shared_structures: shared walls, adjacent tenants, mall common areas."""
+
+# How to read inspection comments, shared by drafting and extraction.
+CONDITION_COMMENT_RULES = """\
+Each of condition_comments is a comment from an inspection, around this visit, of an issue tracked
+at the store: its date, author, status_at_inspection, and text, and the issue's description, area,
+category, severity, responsibility, action, and date_opened. Only the comment's text and status say
+what happened at this visit; the rest describes the issue, which may have been opened long before,
+and the action is what was asked for, not work done. linked_to_order false means the comment is
+tied to this visit by its date, not to this order, so it may describe another technician's work
+that night. Treat the comments as part of the notes. When sources disagree about the same place or
+issue, don't report it as corrected: treat it as still open."""
 
 INSTRUCTIONS = f"""FINDINGS
 Besides the report, fill `findings`: the same visit as data, for Select's internal tracking. Take it

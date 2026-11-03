@@ -12,10 +12,11 @@ files are fetched by the location's file step like any other document.
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import requests
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.integrations.pestpac import PestPacAuthError, PestPacClient
@@ -26,8 +27,15 @@ from app.schemas.pestpac import (
     PestPacConditionListItem,
     PestPacConditionSummary,
 )
+from app.schemas.reports import ReportConditionComment
 from app.services import documents
 from app.services.pestpac_connection import PestPacUnavailableError
+
+# An inspection comment with no order belongs to the visit up to this long before it: the office
+# records results after a night service.
+UNLINKED_COMMENT_WINDOW = timedelta(hours=24)
+# One linked to an order further than this from its work date isn't about that visit.
+LINKED_COMMENT_MAX_GAP = timedelta(days=7)
 
 
 def _get(client: PestPacClient, path: str, params: dict | None = None) -> requests.Response:
@@ -84,6 +92,21 @@ def _order_id(db: Session, operator_id: uuid.UUID, pestpac_order_id: int | None)
     )
 
 
+def _inspection_order_id(db: Session, condition: Condition, pestpac_order_id: int | None):
+    """An inspection's order field holds the OrderID or, on some, the order's number."""
+    if not pestpac_order_id:
+        return None
+    return _order_id(db, condition.operator_id, pestpac_order_id) or db.scalar(
+        select(ServiceOrder.id)
+        .where(
+            ServiceOrder.operator_id == condition.operator_id,
+            ServiceOrder.location_id == condition.location_id,
+            ServiceOrder.order_number == str(pestpac_order_id),
+        )
+        .limit(1)
+    )
+
+
 def _apply_summary(
     db: Session,
     condition: Condition,
@@ -114,7 +137,7 @@ def _apply_details(
     condition.opened_by_user = details.opened_by_user
     condition.inspections = [
         ConditionInspection(
-            service_order_id=_order_id(db, condition.operator_id, i.pestpac_order_id),
+            service_order_id=_inspection_order_id(db, condition, i.pestpac_order_id),
             **i.model_dump(),
         )
         for i in details.inspections
@@ -232,3 +255,72 @@ def documents_by_condition(
     for document in rows:
         result.setdefault(document.condition_id, []).append(document)
     return result
+
+
+def visit_comment(order_id: Any, location_id: Any, work_date: Any) -> ColumnElement[bool]:
+    """An inspection comment from the order's visit: linked to it, or with no order and dated
+    just after its work date (a datetime, or a column of them; None when the order has none)."""
+    linked = ConditionInspection.service_order_id == order_id
+    if work_date is not None:
+        linked = and_(
+            linked,
+            ConditionInspection.detail_date.between(
+                work_date - LINKED_COMMENT_MAX_GAP, work_date + LINKED_COMMENT_MAX_GAP
+            ),
+        )
+        linked = or_(
+            linked,
+            and_(
+                ConditionInspection.service_order_id.is_(None),
+                func.coalesce(ConditionInspection.pestpac_order_id, 0) == 0,
+                ConditionInspection.detail_date.between(
+                    work_date, work_date + UNLINKED_COMMENT_WINDOW
+                ),
+            ),
+        )
+    return and_(
+        ConditionInspection.condition_id == Condition.id,
+        Condition.location_id == location_id,
+        Condition.removed_at.is_(None),
+        func.length(func.trim(ConditionInspection.comment)) > 0,
+        linked,
+    )
+
+
+def visit_comments(db: Session, order: ServiceOrder) -> list[ReportConditionComment]:
+    """The order's inspection comments, oldest first, each with its condition."""
+    if order.location_id is None:
+        return []
+    rows = db.execute(
+        select(ConditionInspection, Condition)
+        .where(visit_comment(order.id, order.location_id, order.work_date))
+        .order_by(ConditionInspection.detail_date, ConditionInspection.id)
+    ).all()
+    return [
+        ReportConditionComment(
+            comment_id=i.id,
+            pestpac_issue_id=c.pestpac_issue_id,
+            date=i.detail_date,
+            author=i.username,
+            status_at_inspection=i.status,
+            text=i.comment,
+            linked_to_order=i.service_order_id == order.id,
+            description=c.detail or c.condition,
+            area=c.area_hierarchy or c.area,
+            category=c.category,
+            severity=c.severity,
+            responsibility=c.responsibility,
+            action=c.action,
+            date_opened=c.date_opened,
+            selected=True,
+        )
+        for i, c in rows
+    ]
+
+
+def comments_input(comments: list[ReportConditionComment]) -> list[dict[str, Any]]:
+    """The comments as the LLM reads them."""
+    return [
+        c.model_dump(mode="json", exclude={"comment_id", "pestpac_issue_id", "selected"})
+        for c in comments
+    ]

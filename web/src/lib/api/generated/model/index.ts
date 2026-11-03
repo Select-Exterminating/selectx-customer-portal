@@ -134,6 +134,8 @@ export * from './programTabs';
 export * from './recentActivityStore';
 export * from './recurringSanitationStore';
 export * from './refreshRequest';
+export * from './reportConditionComment';
+export * from './reportConditionCommentChoice';
 export * from './reportCreate';
 export * from './reportData';
 export * from './reportDataContext';

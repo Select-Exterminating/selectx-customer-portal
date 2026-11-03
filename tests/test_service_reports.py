@@ -6,8 +6,16 @@ from PIL import Image
 
 from app.db.session import SessionLocal
 from app.integrations.openrouter import Usage
-from app.models import Document, InspectionFinding, Note, ServiceOrder, StoredFile
-from app.services import llm_tasks
+from app.models import (
+    Condition,
+    ConditionInspection,
+    Document,
+    InspectionFinding,
+    Note,
+    ServiceOrder,
+    StoredFile,
+)
+from app.services import inspection_findings, llm_tasks
 from tests.conftest import headers_for
 from tests.test_service_orders import _run_worker
 
@@ -605,3 +613,88 @@ def test_report_library_lists_only_finished_reports(
     assert body["items"][0]["id"] == report["id"]  # newest first
     assert [r["title"] for r in body["items"]] == [template["name"], "Service summary"]
     assert client.get(f"{library}?q=invoice", headers=admin).json()["total"] == 0
+
+
+@pytest.fixture
+def condition_comment(world):
+    now = datetime.now(UTC)
+    with SessionLocal() as db:
+        db.add(
+            Condition(
+                operator_id=world.op_a,
+                pestpac_issue_id=40887,
+                location_id=world.location_a,
+                condition="Custom Condition",
+                detail="Standing water in the banquet kitchen",
+                status="Open",
+                pestpac_fetched_at=now,
+                inspections=[
+                    ConditionInspection(
+                        detail_date=datetime(2026, 10, 5, 15, 0),
+                        pestpac_order_id=0,
+                        username="KPASTOR",
+                        status="Open",
+                        comment="Standing water still present.",
+                    )
+                ],
+            )
+        )
+        db.commit()
+
+
+def test_inspection_comments_are_offered_selected_and_draft_alone(
+    client, world, admin, template, condition_comment, fake_llm
+):
+    report = _start(client, world, admin, template)
+    [comment] = report["data"]["condition_comments"]
+    assert comment["selected"] is True and comment["linked_to_order"] is False
+    assert report["data"]["context"]["conditions"][0]["detail"] == (
+        "Standing water in the banquet kitchen"
+    )
+
+    resp = client.post(f"/v1/service-reports/{report['id']}/draft", headers=admin)
+    assert resp.status_code == 202, resp.text
+    _run_worker()
+    [(task, data)] = fake_llm
+    assert inspection_findings.CONDITION_COMMENT_RULES in task.instructions
+    [sent] = data["condition_comments"]
+    assert sent["text"] == "Standing water still present."
+    assert sent["description"] == "Standing water in the banquet kitchen"
+
+
+def test_a_deselected_inspection_comment_is_not_sent(
+    client, world, admin, template, visit, condition_comment, fake_llm
+):
+    report = _start(client, world, admin, template)
+    [comment] = report["data"]["condition_comments"]
+    resp = client.patch(
+        f"/v1/service-reports/{report['id']}",
+        json={"condition_comments": [{"comment_id": comment["comment_id"], "selected": False}]},
+        headers=admin,
+    )
+    assert resp.status_code == 200, resp.text
+    assert (
+        client.post(f"/v1/service-reports/{report['id']}/draft", headers=admin).status_code == 202
+    )
+    _run_worker()
+    assert fake_llm[0][1]["condition_comments"] == []
+
+
+def test_another_orders_note_that_day_is_offered_but_not_selected(client, world, admin, template):
+    with SessionLocal() as db:
+        db.add(
+            Note(
+                operator_id=world.op_a,
+                pestpac_note_id=9,
+                pestpac_order_id=999001,
+                note_date=datetime(2026, 10, 5, 11, 0),
+                note_code="SERVICE",
+                note="Another technician's note.",
+                created_by_user="OTHER",
+                location_id=world.location_a,
+                pestpac_fetched_at=datetime.now(UTC),
+            )
+        )
+        db.commit()
+    report = _start(client, world, admin, template)
+    assert {n["pestpac_note_id"]: n["selected"] for n in report["data"]["notes"]} == {9: False}

@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -10,6 +10,9 @@ from app.db.session import SessionLocal
 from app.integrations.openrouter import Usage
 from app.models import (
     BillTo,
+    Company,
+    Condition,
+    ConditionInspection,
     InspectionFinding,
     InspectionFindingRequest,
     Note,
@@ -150,6 +153,109 @@ def test_extracts_from_the_comment_and_the_visits_service_notes(world, fake_llm)
         assert finding.report_id is None
         assert finding.method_version == inspection_findings.METHOD_VERSION
     assert _requests() == []
+
+
+def _condition_comments(world, *inspections, removed=False, issue=40887):
+    """(date, order value, linked to the order, comment)"""
+    now = datetime.now(UTC)
+    with SessionLocal() as db:
+        db.add(
+            Condition(
+                operator_id=world.op_a,
+                pestpac_issue_id=issue,
+                location_id=world.location_a,
+                area_hierarchy="Kitchen",
+                condition="Custom Condition",
+                detail="Standing water in the banquet kitchen",
+                category="Sanitation",
+                severity="Low",
+                status="Open",
+                action="Eliminate standing water",
+                removed_at=now if removed else None,
+                pestpac_fetched_at=now,
+                inspections=[
+                    ConditionInspection(
+                        detail_date=date,
+                        pestpac_order_id=value,
+                        service_order_id=world.service_order_a if linked else None,
+                        username="KPASTOR",
+                        status="Resolved",
+                        comment=comment,
+                    )
+                    for date, value, linked, comment in inspections
+                ],
+            )
+        )
+        db.commit()
+
+
+WORK = datetime(2026, 10, 5, 9, 30)
+
+
+def test_reads_the_visits_inspection_comments(world, fake_llm):
+    _worked(world)
+    _condition_comments(
+        world,
+        (WORK + timedelta(hours=3), 5001, True, "Linked to the order."),
+        (WORK + timedelta(hours=6), 0, False, "No order, hours after."),
+        (WORK + timedelta(hours=7), None, False, "No order value at all."),
+        (WORK - timedelta(hours=1), 0, False, "No order, before the visit."),
+        (WORK + timedelta(hours=25), 0, False, "No order, next visit's."),
+        (WORK + timedelta(hours=4), 111, False, "Another order's value."),
+        (WORK + timedelta(days=8), 5001, True, "Linked, far from the visit."),
+        (WORK + timedelta(hours=5), 0, False, "   "),
+    )
+    _condition_comments(world, (WORK, 0, False, "Removed."), removed=True, issue=40888)
+    _request(world)
+    assert _run() == 1
+
+    [(task, data, _)] = fake_llm
+    assert inspection_findings.CONDITION_COMMENT_RULES in task.instructions
+    comments = data["condition_comments"]
+    assert [(c["text"], c["linked_to_order"]) for c in comments] == [
+        ("Linked to the order.", True),
+        ("No order, hours after.", False),
+        ("No order value at all.", False),
+    ]
+    first = comments[0]
+    assert first["description"] == "Standing water in the banquet kitchen"
+    assert first["status_at_inspection"] == "Resolved"
+    assert first["author"] == "KPASTOR"
+    assert "comment_id" not in first and "selected" not in first
+
+
+def test_only_an_inspection_comment_is_enough_to_read(world, fake_llm):
+    _worked(world)
+    _condition_comments(world, (WORK + timedelta(hours=3), 0, False, "Treated the area."))
+    with SessionLocal() as db:
+        plan = findings_extraction.backfill(db, db.get(Company, world.company_a))
+        db.commit()
+    assert plan.readable == 1 and plan.queued == 1
+    assert _run() == 1
+    assert fake_llm[0][1]["notes"] == [] and fake_llm[0][1]["technician_comment"] is None
+
+
+def test_another_orders_note_on_the_work_date_is_not_read(world, fake_llm):
+    _worked(world, comment="Mine.")
+    _notes(world, (1, datetime(2026, 10, 5, 10, 15), "SERVICE", "Unlinked that day.", False))
+    with SessionLocal() as db:
+        db.add(
+            Note(
+                operator_id=world.op_a,
+                pestpac_note_id=2,
+                pestpac_order_id=999001,
+                note_date=datetime(2026, 10, 5, 11, 0),
+                note_code="SERVICE",
+                note="Another technician's note.",
+                created_by_user="OTHER",
+                location_id=world.location_a,
+                pestpac_fetched_at=datetime.now(UTC),
+            )
+        )
+        db.commit()
+    _request(world)
+    assert _run() == 1
+    assert [n["text"] for n in fake_llm[0][1]["notes"]] == ["Unlinked that day."]
 
 
 def test_an_order_with_nothing_to_read_is_skipped(world, no_llm):

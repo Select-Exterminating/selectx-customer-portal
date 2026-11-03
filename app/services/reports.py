@@ -160,6 +160,7 @@ def sample_context(fields: list[TemplateField] | None = None) -> ReportContext:
                 status="Open",
                 date_opened=datetime(2026, 10, 5, 9, 45),
                 action="Seal the opening.",
+                detail="Gap under the rear door",
             )
         ],
         fields={f.key: sample_value(f) for f in fields or []},
