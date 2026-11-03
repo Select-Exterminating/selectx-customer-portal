@@ -12,6 +12,7 @@ that aren't visits at all (travel, credits) are left out.
 Everything is calculated on read from the scope's rows; the API returns summaries.
 """
 
+import re
 import statistics
 import uuid
 from collections import Counter, defaultdict
@@ -32,6 +33,7 @@ from app.schemas.program_dashboard import (
     StoreWatchRow,
     WatchFlag,
 )
+from app.services import area_mapping
 from app.services.dashboard import store_number
 
 ACTIVITY_SCORE = {"none": 0, "low": 1, "moderate": 2, "heavy": 3}
@@ -61,6 +63,7 @@ FLAG_LABELS = {
     "structural": ("Open Structural Backlog", "Structural"),
     "sanitation": ("Recurring Sanitation Concerns", "Sanitation"),
 }
+ZONE_FLAGS = {"active", "repeat"}  # flags whose detail names zones
 TIME_TO_STABILIZED_BUCKETS = [
     (0, 35, "Within 5 Weeks"),
     (35, 49, "5–7 Weeks"),
@@ -269,6 +272,36 @@ def _structural_status(visits: list[Visit], since: date | None = None) -> dict[t
     return latest
 
 
+def risk_points(visits: list[Visit], end: date) -> dict[str, float]:
+    """The risk index's points by component, over the 90 days up to `end` of `visits` (empty when
+    none of those visits is rated)."""
+    window = [v for v in visits if (end - v.day).days < RISK_WINDOW_DAYS]
+    window_rated = [v for v in window if v.activity is not None]
+    if not window_rated:
+        return {}
+    open_recent = sum(
+        1
+        for s, logged in _structural_status(visits).values()
+        if s != "repaired" and (end - logged).days < RISK_WINDOW_DAYS
+    )
+    return {
+        "activity": (
+            sum(v.activity for v in window_rated) / len(window_rated) / 3 * RISK_POINTS["activity"]
+        ),
+        "structural": min(open_recent, STRUCTURAL_CAP) / STRUCTURAL_CAP * RISK_POINTS["structural"],
+        "sanitation": (
+            sum(1 for v in window if v.sanitation) / len(window) * RISK_POINTS["sanitation"]
+        ),
+        "pests": sum(1 for v in window if v.pests) / len(window) * RISK_POINTS["pests"],
+    }
+
+
+def risk_index_at(visits: list[Visit], end: date) -> int | None:
+    """The risk index as it stood on `end`, from the visits up to then."""
+    points = risk_points([v for v in visits if v.day <= end], end)
+    return round(sum(points.values())) if points else None
+
+
 def store_metrics(
     location_id: uuid.UUID, visits: list[Visit], tier: str | None, as_of: date
 ) -> StoreMetrics:
@@ -300,22 +333,7 @@ def store_metrics(
     m.structural_open = len(statuses) - m.structural_remediated
 
     if rated:
-        end = rated[-1].day
-        window = [v for v in visits if (end - v.day).days < RISK_WINDOW_DAYS]
-        window_rated = [v for v in window if v.activity is not None]
-        open_recent = sum(
-            1
-            for s, logged in statuses.values()
-            if s != "repaired" and (end - logged).days < RISK_WINDOW_DAYS
-        )
-        points = (
-            (sum(v.activity for v in window_rated) / len(window_rated) / 3 if window_rated else 0)
-            * RISK_POINTS["activity"]
-            + min(open_recent, STRUCTURAL_CAP) / STRUCTURAL_CAP * RISK_POINTS["structural"]
-            + sum(1 for v in window if v.sanitation) / len(window) * RISK_POINTS["sanitation"]
-            + sum(1 for v in window if v.pests) / len(window) * RISK_POINTS["pests"]
-        )
-        m.risk_index = round(points)
+        m.risk_index = round(sum(risk_points(visits, rated[-1].day).values()))
     m.risk_band = band_of(m.risk_index)
     _watch(m, rated, services, recurrences, as_of)
     return m
@@ -604,6 +622,27 @@ def flag_label(code: str) -> tuple[str, str]:
     return FLAG_LABELS[code]
 
 
+def watch_flags(m: StoreMetrics, zone_names: dict[str, str]) -> list[WatchFlag]:
+    """A store's flags, heaviest first, naming zones as the operator does."""
+
+    def detail(code: str, text: str) -> str:
+        if code not in ZONE_FLAGS or not zone_names:
+            return text
+        pattern = "|".join(re.escape(z) for z in zone_names)
+        return re.sub(rf"\b({pattern})\b", lambda found: zone_names[found[0]], text)
+
+    return [
+        WatchFlag(
+            code=code,
+            label=FLAG_LABELS[code][0],
+            short=FLAG_LABELS[code][1],
+            weight=weight,
+            detail=detail(code, text),
+        )
+        for code, weight, text in sorted(m.flags, key=lambda f: -f[1])
+    ]
+
+
 def program_dashboard(
     db: Session,
     company_id: uuid.UUID,
@@ -624,6 +663,11 @@ def program_dashboard(
     locations = [loc for loc in all_locations if state is None or loc.state == state]
     as_of, stores = compute(db, locations, today)
     by_id = {loc.id: loc for loc in locations}
+    zone_names = (
+        {z.value: n for z, n in area_mapping.zone_names(db, locations[0].operator_id).items()}
+        if locations
+        else {}
+    )
 
     def row(s: StoreMetrics) -> StoreWatchRow:
         loc = by_id[s.location_id]
@@ -638,16 +682,7 @@ def program_dashboard(
             longitude=loc.longitude,
             tier=s.tier,
             attention=s.attention,
-            flags=[
-                WatchFlag(
-                    code=code,
-                    label=FLAG_LABELS[code][0],
-                    short=FLAG_LABELS[code][1],
-                    weight=weight,
-                    detail=detail,
-                )
-                for code, weight, detail in sorted(s.flags, key=lambda f: -f[1])
-            ],
+            flags=watch_flags(s, zone_names),
             risk_index=s.risk_index,
             risk_band=s.risk_band,
             services=s.services,

@@ -600,6 +600,12 @@ CASES = [
         _all(404, platform_admin=200, admin_a=200, staff_a=200, manager_a=200),
     ),
     Case(
+        "store profile in company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/stores/{w.location_a}/profile",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200, manager_a=200),
+    ),
+    Case(
         "report library of company A",
         "GET",
         lambda w: f"/v1/companies/{w.company_a}/report-library",

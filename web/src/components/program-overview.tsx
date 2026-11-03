@@ -14,7 +14,7 @@ import {
 } from "recharts";
 
 import { DataTable, DataTableFrame } from "@/components/data-table";
-import { DashboardLink } from "@/components/dashboard-link";
+import { StoreLink } from "@/components/dashboard-link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,13 +68,13 @@ export const BAND_COLOR: Record<string, string> = {
   Controlled: "var(--risk-controlled)",
   "No Service Data": "var(--border)",
 };
-const BAND_CHIP: Record<string, string> = {
+export const BAND_CHIP: Record<string, string> = {
   Critical: "bg-risk-critical text-risk-critical-foreground",
   High: "bg-risk-high text-risk-high-foreground",
   Elevated: "bg-risk-elevated text-risk-elevated-foreground",
   Controlled: "bg-risk-controlled text-risk-controlled-foreground",
 };
-const ACTIVITY_COLOR = [
+export const ACTIVITY_COLOR = [
   "var(--risk-controlled)",
   "var(--risk-elevated)",
   "var(--risk-high)",
@@ -419,9 +419,9 @@ function WatchRow({ s }: { s: StoreWatchRow }) {
   return (
     <tr className="align-top">
       <td className="p-3">
-        <DashboardLink href={`/locations/${s.location_id}`} className="text-sm font-bold">
+        <StoreLink locationId={s.location_id} className="text-sm font-bold">
           {s.store_number ? `#${s.store_number}` : s.name}
-        </DashboardLink>
+        </StoreLink>
         <span className="block text-xs text-muted-foreground">
           {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
         </span>

@@ -2,10 +2,11 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import BillTo, Company
+from app.models import BillTo, Company, Location
 from app.schemas.dashboard import CompanyDashboard
 from app.schemas.program_dashboard import ProgramDashboard
 from app.schemas.program_tabs import (
@@ -14,9 +15,10 @@ from app.schemas.program_tabs import (
     ReportLibraryPage,
     RiskAssessmentDashboard,
 )
+from app.schemas.store_profile import StoreProfile
 from app.security.access import AccessScope, get_scope
 from app.security.permissions import Perm
-from app.services import dashboard, program_metrics, program_tabs
+from app.services import dashboard, program_metrics, program_tabs, store_profile
 
 router = APIRouter(tags=["dashboard"])
 
@@ -149,6 +151,32 @@ def get_risk_assessment_findings(
         zone=zone,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/companies/{company_id}/stores/{location_id}/profile", response_model=StoreProfile)
+def get_store_profile(
+    company_id: uuid.UUID,
+    location_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """One store's flyover. Reports are listed only for callers who can open them."""
+    company = _scoped_company(db, scope, company_id, None, company_users=True)
+    location = db.get(Location, location_id)
+    if (
+        location is None
+        or location.removed_at is not None
+        or db.scalar(select(BillTo.company_id).where(BillTo.id == location.bill_to_id))
+        != company.id
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return store_profile.store_profile(
+        db,
+        company,
+        location,
+        include_reports=scope.can(Perm.reports_read, company.operator_id),
+        today=date.today(),
     )
 
 

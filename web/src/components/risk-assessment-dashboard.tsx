@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { DataTable, DataTableFrame } from "@/components/data-table";
-import { DashboardLink } from "@/components/dashboard-link";
+import { StoreLink } from "@/components/dashboard-link";
 import { StatTile } from "@/components/stat-tile";
 import { BAND_COLOR, day, Eyebrow, pct, STATEMENT_BAND } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -88,9 +88,9 @@ function SimpleCard({
 function StoreCell({ s }: { s: AssessedStore }) {
   return (
     <>
-      <DashboardLink href={`/risk-inspections/${s.inspection_id}`} className="font-medium">
+      <StoreLink locationId={s.location_id} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </DashboardLink>
+      </StoreLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
@@ -365,12 +365,9 @@ function Findings({ scope }: { scope: Scope }) {
               {(data?.items ?? []).map((f, i) => (
                 <tr key={`${f.inspection_id}-${f.zone}-${f.kind}-${i}`} className="align-top">
                   <td className="p-3 whitespace-nowrap">
-                    <DashboardLink
-                      href={`/risk-inspections/${f.inspection_id}`}
-                      className="font-medium"
-                    >
+                    <StoreLink locationId={f.location_id} className="font-medium">
                       {f.store_number ? `#${f.store_number}` : f.name}
-                    </DashboardLink>
+                    </StoreLink>
                   </td>
                   <td className="p-3 whitespace-nowrap">{day(f.assessed_on)}</td>
                   <td className="p-3">{f.zone}</td>

@@ -144,6 +144,8 @@ Sections 1–8 describe the marketing site. The portal follows the RAMP portal's
 
 **Statement bands:** dashboard tabs open with `STATEMENT_BAND`: the ink gradient, a `brand-green` eyebrow, a bold headline with `highlight` emphasis, and `ink-muted` notes. Tiles on a band are translucent with a `brand-green` top rule.
 
+**Drawers:** a store's flyover is a full-height panel from the right on the page grey, up to 1180px wide, with a sticky ink header and a green rule.
+
 **Badges:** one meaning per style, in a pill.
 - State of a record or job: `pending` (in progress or waiting: Open, Draft, Queued, Syncing, Received), `success` (done: Worked, Final, Synced, Verified, Processed), `warning` (needs attention: Partly synced, Not verified, Inactive in PestPac, medium severity, a balance), `destructive` (failed, invalid, high severity).
 - Finished history and plain labels: `outline` (Billed, Superseded, Inactive, Deleted; document type, category, On portal, revision, "You").

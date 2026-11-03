@@ -23,7 +23,7 @@ import {
   STATEMENT_BAND,
 } from "@/components/program-overview";
 import { DataTable, DataTableFrame } from "@/components/data-table";
-import { DashboardLink } from "@/components/dashboard-link";
+import { StoreLink } from "@/components/dashboard-link";
 import { StatTile } from "@/components/stat-tile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ function WithTabs({
   return <>{render(tabs.data.data)}</>;
 }
 
-function StoreLink({
+function StoreCell({
   s,
 }: {
   s: {
@@ -100,9 +100,9 @@ function StoreLink({
 }) {
   return (
     <>
-      <DashboardLink href={`/locations/${s.location_id}`} className="font-medium">
+      <StoreLink locationId={s.location_id} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </DashboardLink>
+      </StoreLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
@@ -329,7 +329,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
             {a.recent.map((s) => (
               <tr key={s.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={s} />
+                  <StoreCell s={s} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{day(s.last_activity)}</td>
                 <td className="p-3 capitalize">{s.level}</td>
@@ -477,7 +477,7 @@ function Structural({ s }: { s: StructuralTab }) {
             {open.slice(0, 200).map((o, i) => (
               <tr key={`${o.location_id}-${o.category}-${o.zone}-${i}`} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={o} />
+                  <StoreCell s={o} />
                 </td>
                 <td className="p-3">{o.category}</td>
                 <td className="p-3">{o.zone}</td>
@@ -588,7 +588,7 @@ function Sanitation({ s }: { s: SanitationTab }) {
             {s.stores.map((r) => (
               <tr key={r.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={r} />
+                  <StoreCell s={r} />
                 </td>
                 <td className="p-3 text-right tabular-nums">
                   {integer.format(r.visits_with_concerns)} of {integer.format(r.visits)}
@@ -684,7 +684,7 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
             {shown.map((r) => (
               <tr key={r.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={r} />
+                  <StoreCell s={r} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{r.tier ?? "—"}</td>
                 <td className="p-3">{r.stage}</td>
@@ -794,9 +794,9 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
                 key={s.location_id}
                 className="grid grid-cols-[6rem_1fr_3rem] items-center gap-2 text-sm"
               >
-                <DashboardLink href={`/locations/${s.location_id}`}>
+                <StoreLink locationId={s.location_id}>
                   {s.store_number ? `#${s.store_number}` : s.name}
-                </DashboardLink>
+                </StoreLink>
                 <span
                   aria-hidden
                   className="h-3"
@@ -880,7 +880,7 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
             {rows.map((s) => (
               <tr key={s.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={s} />
+                  <StoreCell s={s} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{s.tier ?? "—"}</td>
                 <td className="p-3 text-right tabular-nums">{integer.format(s.services)}</td>
@@ -971,7 +971,7 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
               {rated.map((s) => (
                 <tr key={s.location_id} className="align-top">
                   <td className="p-3">
-                    <StoreLink s={s} />
+                    <StoreCell s={s} />
                   </td>
                   <td className="p-3">
                     <span aria-hidden className="mr-2 inline-block size-2.5" style={bandStyle(s)} />

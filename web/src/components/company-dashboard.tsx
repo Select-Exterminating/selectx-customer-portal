@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { DashboardLinksContext } from "@/components/dashboard-link";
 import { ProgramOverview } from "@/components/program-overview";
+import { StoreProfileDrawer } from "@/components/store-profile";
 import {
   ExecutiveTabView,
   RiskModelTabView,
@@ -184,6 +185,7 @@ export function CompanyDashboardView() {
               </TabsContent>
             )}
           </Tabs>
+          <StoreProfileDrawer companyId={companyId} operatorId={operatorId} />
         </DashboardLinksContext.Provider>
       )}
     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { StoreLink } from "@/components/dashboard-link";
 import { DataTable, DataTableFrame } from "@/components/data-table";
 import { day } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -97,12 +98,9 @@ export function ReportLibrary({
                     )}
                   </td>
                   <td className="p-3 whitespace-nowrap">
-                    <Link
-                      href={`/locations/${report.location_id}`}
-                      className="text-primary hover:underline"
-                    >
+                    <StoreLink locationId={report.location_id}>
                       {report.store_number ? `#${report.store_number}` : report.name}
-                    </Link>
+                    </StoreLink>
                   </td>
                   <td className="p-3 whitespace-nowrap">{report.order_number ?? "—"}</td>
                   <td className="p-3 whitespace-nowrap">{day(report.work_date)}</td>
