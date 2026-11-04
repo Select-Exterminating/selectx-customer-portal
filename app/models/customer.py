@@ -12,8 +12,9 @@ from sqlalchemy import (
     UniqueConstraint,
     false,
     func,
+    select,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, column_property, mapped_column
 
 from app.db.base import Base
 
@@ -136,3 +137,11 @@ class Location(Base):
     removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pestpac_fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # The customer's name, for telling a store's own name from one that only repeats it.
+    company_name: Mapped[str | None] = column_property(
+        select(Company.name)
+        .join(BillTo, BillTo.company_id == Company.id)
+        .where(BillTo.id == bill_to_id)
+        .scalar_subquery()
+    )

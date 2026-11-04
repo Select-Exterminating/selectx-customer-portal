@@ -15,7 +15,7 @@ from sqlalchemy import select
 
 from app import load_inspections
 from app.db.session import SessionLocal
-from app.models import InspectionKind, InspectionSubmission, ServiceOrder
+from app.models import InspectionKind, InspectionSubmission, Location, ServiceOrder
 from app.services.inspections import (
     InspectionError,
     import_form,
@@ -332,3 +332,144 @@ def test_loader_command(world, tmp_path, caplog):
     assert "Submissions: 2 unchanged" in caplog.text
     assert load_inspections.main([*args, "--reparse", *files]) == 0
     assert "Submissions: 2 updated" in caplog.text
+
+
+REPEAT_OFFSET = 10_000_000_000  # above every real entry id
+
+
+def _two_summary_sections() -> tuple[dict, dict]:
+    """The form with a second section asking for the summary too, like National Accounts', and a
+    submission answering both."""
+    form = copy.deepcopy(FORM)
+    form["id"] = 5962102
+    payload = submission("pdf_sample")
+    payload["form_id"] = 5962102
+    index = next(
+        i
+        for i, section in enumerate(form["sections"])
+        if section["description"].startswith("Ceiling Voids")
+    )
+    second = copy.deepcopy(form["sections"][index])
+    second["id"] += REPEAT_OFFSET
+    second["description"] = "Receiving & Refuse Areas"
+    new_ids = {}
+    for sheet in second["sheets"]:
+        for entry in sheet["entries"]:
+            new_ids[entry["id"]] = entry["id"] + REPEAT_OFFSET
+            entry["id"] = new_ids[entry["id"]]
+    form["sections"].insert(index + 1, second)
+    payload["responses"].extend(
+        {
+            **response,
+            "id": response["id"] + REPEAT_OFFSET,
+            "entry_id": new_ids[response["entry_id"]],
+        }
+        for response in list(payload["responses"])
+        if response["entry_id"] in new_ids
+    )
+    return form, payload
+
+
+def _answer_summary(payload: dict, form: dict, *, section: int, **values: str) -> None:
+    """Set the RAMP recommendation and manager summary in the first (1) or second (2) section."""
+    entries = [
+        entry
+        for s in form["sections"]
+        for sheet in s.get("sheets") or []
+        for entry in sheet["entries"]
+    ]
+    labels = {"ramp": "ramp recommendation", "manager": "service manager"}
+    for name, value in values.items():
+        wanted = [e["id"] for e in entries if e["label"].lower().startswith(labels[name])]
+        for response in payload["responses"]:
+            if response["entry_id"] in wanted and (response["entry_id"] >= REPEAT_OFFSET) == (
+                section == 2
+            ):
+                response["value"] = value
+
+
+def test_a_blank_second_summary_doesnt_replace_the_first(world):
+    form, payload = _two_summary_sections()
+    _answer_summary(payload, form, section=1, ramp="RAMP 3", manager="Found it.")
+    _answer_summary(payload, form, section=2, ramp="", manager="")
+    with SessionLocal() as db:
+        import_form(db, world.op_a, form, InspectionKind.risk)
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.risk_summary.ramp_recommendation == 3
+        assert stored.risk_summary.manager_summary == "Found it."
+        assert len(stored.risk_zones) == len(zones_by_key(stored))
+        # Every response is still stored as sent.
+        assert len(stored.responses) == len(payload["responses"])
+        db.rollback()
+
+
+def test_a_second_summary_fills_a_blank_first_and_different_notes_are_joined(world):
+    form, payload = _two_summary_sections()
+    _answer_summary(payload, form, section=1, ramp="", manager="First.")
+    _answer_summary(payload, form, section=2, ramp="RAMP 1", manager="Second.")
+    with SessionLocal() as db:
+        import_form(db, world.op_a, form, InspectionKind.risk)
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.risk_summary.ramp_recommendation == 1
+        assert stored.risk_summary.manager_summary == "First.\n\nSecond."
+        db.rollback()
+
+
+def test_two_different_recommendations_keep_the_first_with_a_warning(world):
+    form, payload = _two_summary_sections()
+    _answer_summary(payload, form, section=1, ramp="RAMP 2")
+    _answer_summary(payload, form, section=2, ramp="RAMP 3")
+    with SessionLocal() as db:
+        import_form(db, world.op_a, form, InspectionKind.risk)
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.risk_summary.ramp_recommendation == 2
+        assert (
+            "ramp_recommendation",
+            "asked twice with different answers; kept the first",
+        ) in issues(stored)
+        db.rollback()
+
+
+def _at_address(payload: dict, address: str, city: str) -> dict:
+    for response in payload["responses"]:
+        label = response["export_label"]
+        if label == "WorkOrderI":
+            response["value"] = "Reeves"
+        elif label == "StoreNumbe":
+            response["value"] = "SWEETGREEN - SOMEWHERE"
+        elif label == "Address":
+            response["value"] = address
+        elif label == "City":
+            response["value"] = city
+    return payload
+
+
+def test_links_by_address_only_when_one_location_is_there(world):
+    with SessionLocal() as db:
+        location = db.get(Location, world.location_a)
+        location.address, location.city = "10 HUDSON YARDS", "NEW YORK"
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        payload = _at_address(submission("pdf_sample"), "10 Hudson Yards ", "New York")
+        stored = store_submission(db, world.op_a, payload).submission
+        assert (stored.store_number, stored.location_id) == (None, world.location_a)
+
+        other = db.scalar(
+            select(Location).where(
+                Location.id != world.location_a, Location.operator_id == world.op_a
+            )
+        )
+        if other is None:
+            other = Location(
+                operator_id=world.op_a,
+                bill_to_id=world.bill_to_a,
+                pestpac_location_id=800999,
+                pestpac_fetched_at=location.pestpac_fetched_at,
+            )
+            db.add(other)
+        other.address, other.city = "10 HUDSON YARDS", "NEW YORK"
+        other.removed_at = None
+        db.flush()
+        payload["revised_at"] = "2026-10-30T12:00:00Z"
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.location_id is None  # two locations there: not a guess
+        db.rollback()

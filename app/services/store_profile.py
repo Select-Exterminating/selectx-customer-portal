@@ -38,7 +38,7 @@ from app.schemas.store_profile import (
     ZoneMonths,
 )
 from app.services import area_mapping
-from app.services.dashboard import store_number
+from app.services.dashboard import store_name, store_number
 from app.services.program_metrics import (
     ACTIVITY_LEVEL,
     NON_VISIT_CODES,
@@ -317,7 +317,7 @@ def store_profile(
     return StoreProfile(
         location_id=location.id,
         store_number=store_number(location.pestpac_company),
-        name=location.description or location.pestpac_company,
+        name=store_name(location),
         address=location.address,
         city=location.city,
         state=location.state,

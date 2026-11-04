@@ -61,7 +61,7 @@ from app.schemas.program_tabs import (
     VisitTypeCount,
 )
 from app.services import area_mapping
-from app.services.dashboard import store_number
+from app.services.dashboard import store_name, store_number
 from app.services.program_metrics import (
     ACTIVITY_LEVEL,
     INSPECTION_CODES,
@@ -98,7 +98,7 @@ def _ref(loc: Location) -> dict:
     return {
         "location_id": loc.id,
         "store_number": store_number(loc.pestpac_company),
-        "name": loc.description or loc.pestpac_company,
+        "name": store_name(loc),
         "city": loc.city,
         "state": loc.state,
     }

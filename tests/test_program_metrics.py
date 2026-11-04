@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from app.db.session import SessionLocal
 from app.integrations.openrouter import Usage
-from app.models import Report, ServiceOrder
+from app.models import Location, Report, ServiceOrder
 from app.services import inspection_findings
 from app.services.program_metrics import (
     Visit,
@@ -341,3 +341,19 @@ def test_flags_name_zones_as_the_operator_does():
     )
     [flag] = [f for f in watch_flags(m, {"bar_beverage": "Bar & Beverage"}) if f.code == "active"]
     assert "in Bar & Beverage." in flag.detail and "bar_beverage" not in flag.detail
+
+
+def test_a_store_that_only_repeats_the_customers_name_is_named_by_address(client, world):
+    staff = headers_for(client, world.emails["staff_a"])
+    path = f"/v1/companies/{world.company_a}/stores/{world.location_a}/profile"
+    with SessionLocal() as db:
+        location = db.get(Location, world.location_a)
+        location.pestpac_company, location.address = "ACME RESTAURANTS", "10 HUDSON YARDS"
+        location.description = None
+        db.commit()
+    assert client.get(path, headers=staff).json()["name"] == "10 HUDSON YARDS"
+
+    with SessionLocal() as db:
+        db.get(Location, world.location_a).pestpac_company = "ACME BOSTON"
+        db.commit()
+    assert client.get(path, headers=staff).json()["name"] == "ACME BOSTON"
