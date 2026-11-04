@@ -306,6 +306,8 @@ pipenv run pytest
 pipenv run alembic check
 ```
 
+Tests run in 4 processes (`pytest-xdist`; `-n 0` runs them in one, for debugging). Each process gets its own database, `customer_portal_test_gw<n>`, created on first use. Tests use a cheap password hash (`tests/conftest.py`), so they don't exercise production's Argon2 cost.
+
 Migration changes must be exercised through upgrade and downgrade **against a scratch database, never the development database** — a downgrade drops data. When a migration check targets a temporary database, verify `current_database()` before any downgrade, and call the virtualenv's `alembic` directly with an explicit `DATABASE_URL` — `pipenv run` loads `.env` and can redirect the command to the development database.
 
 Frontend: `pnpm typecheck`, `pnpm lint` (includes `pnpm format:check` and the theme contrast check), `pnpm build`. Format with `pnpm format` (Prettier, 100 columns, Tailwind classes sorted); generated client and `components/ui` are excluded. Regenerate the API client (`pnpm api:generate`) whenever the backend contract changes. Test authorization on the backend; UI visibility checks are not a substitute.
