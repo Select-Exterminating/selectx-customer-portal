@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/page-tabs";
+import { OperatorRiskInspections } from "@/components/risk-inspections-list";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { errorMessage } from "@/lib/api/errors";
 import {
@@ -124,7 +125,16 @@ function CompaniesTab({ operatorId }: { operatorId: string }) {
 export function OperatorDetail() {
   const { operatorId } = useParams<{ operatorId: string }>();
   const [tab, setTab] = useUrlTab(
-    ["companies", "members", "pestpac", "gocanvas-api", "areas", "webhooks", "gocanvas"],
+    [
+      "companies",
+      "risk-inspections",
+      "members",
+      "pestpac",
+      "gocanvas-api",
+      "areas",
+      "webhooks",
+      "gocanvas",
+    ],
     "companies",
   );
   const { can } = usePermissions();
@@ -157,6 +167,9 @@ export function OperatorDetail() {
           {can("companies:read", operatorId) && (
             <TabsTrigger value="companies">Companies</TabsTrigger>
           )}
+          {can("bill_tos:read", operatorId) && (
+            <TabsTrigger value="risk-inspections">Risk Inspections</TabsTrigger>
+          )}
           {can("members:read", operatorId) && <TabsTrigger value="members">Members</TabsTrigger>}
           {can("pestpac_connection:read", operatorId) && (
             <TabsTrigger value="pestpac">PestPac API</TabsTrigger>
@@ -173,6 +186,14 @@ export function OperatorDetail() {
         {can("companies:read", operatorId) && (
           <TabsContent value="companies" className="pt-4">
             <CompaniesTab operatorId={operatorId} />
+          </TabsContent>
+        )}
+        {can("bill_tos:read", operatorId) && (
+          <TabsContent value="risk-inspections" className="pt-4">
+            <OperatorRiskInspections
+              operatorId={operatorId}
+              operatorName={operator.data.data.name}
+            />
           </TabsContent>
         )}
         {can("members:read", operatorId) && (

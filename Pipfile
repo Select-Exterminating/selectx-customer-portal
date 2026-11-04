@@ -25,6 +25,7 @@ pytest = "*"
 httpx = "*"
 ruff = "*"
 responses = "*"
+pytest-xdist = "*"
 
 [requires]
 python_version = "3.14"

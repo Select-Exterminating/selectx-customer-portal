@@ -32,6 +32,8 @@ const PAIRS = [
   ["primary-foreground", "chart-1", UI, "white marks on chart green"],
   ["muted-foreground", "background", TEXT, "inactive tab on white"],
   ["warning-foreground", "warning", TEXT, "warning badge"],
+  ["foreground", "warning", TEXT, "text on highlighted rows"],
+  ["primary", "warning", TEXT, "links on highlighted rows"],
   ["risk-critical-foreground", "risk-critical", TEXT, "critical risk chip"],
   ["risk-high-foreground", "risk-high", TEXT, "high risk chip"],
   ["risk-elevated-foreground", "risk-elevated", TEXT, "elevated risk chip"],

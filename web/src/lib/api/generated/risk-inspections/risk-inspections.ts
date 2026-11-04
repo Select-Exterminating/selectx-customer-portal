@@ -5,16 +5,20 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -22,7 +26,10 @@ import type {
 import type {
   HTTPValidationError,
   RiskInspectionDetail,
-  RiskInspectionListItem
+  RiskInspectionListItem,
+  RiskInspectionLocationUpdate,
+  RiskInspectionsSearchRiskInspectionStoresParams,
+  StoreCandidate
 } from '../model';
 
 import { bffFetch } from '../../fetcher';
@@ -46,6 +53,124 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export type riskInspectionsListOperatorRiskInspectionsResponse200 = {
+  data: RiskInspectionListItem[]
+  status: 200
+}
+
+export type riskInspectionsListOperatorRiskInspectionsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type riskInspectionsListOperatorRiskInspectionsResponseSuccess = (riskInspectionsListOperatorRiskInspectionsResponse200) & {
+  headers: Headers;
+};
+export type riskInspectionsListOperatorRiskInspectionsResponseError = (riskInspectionsListOperatorRiskInspectionsResponse422) & {
+  headers: Headers;
+};
+
+export const getRiskInspectionsListOperatorRiskInspectionsUrl = (operatorId: string,) => {
+
+
+
+
+  return `/v1/operators/${operatorId}/risk-inspections`
+}
+
+/**
+ * All the operator's risk inspections, those without a store first, then newest first.
+ * @summary List Operator Risk Inspections
+ */
+export const riskInspectionsListOperatorRiskInspections = async (operatorId: string, options?: Parameters<typeof bffFetch>[1]): Promise<riskInspectionsListOperatorRiskInspectionsResponseSuccess> => {
+
+  return bffFetch<riskInspectionsListOperatorRiskInspectionsResponseSuccess>(getRiskInspectionsListOperatorRiskInspectionsUrl(operatorId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getRiskInspectionsListOperatorRiskInspectionsQueryKey = (operatorId: string,) => {
+    return [
+    `/v1/operators/${operatorId}/risk-inspections`
+    ] as const;
+    }
+
+
+export const getRiskInspectionsListOperatorRiskInspectionsQueryOptions = <TData = Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError = HTTPValidationError>(operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getRiskInspectionsListOperatorRiskInspectionsQueryKey(operatorId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>> = ({ signal }) => riskInspectionsListOperatorRiskInspections(operatorId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: operatorId !== null && operatorId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type RiskInspectionsListOperatorRiskInspectionsQueryResult = NonNullable<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>>
+export type RiskInspectionsListOperatorRiskInspectionsQueryError = HTTPValidationError
+
+
+export function useRiskInspectionsListOperatorRiskInspections<TData = Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError = HTTPValidationError>(
+ operatorId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>,
+          TError,
+          Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskInspectionsListOperatorRiskInspections<TData = Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>,
+          TError,
+          Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskInspectionsListOperatorRiskInspections<TData = Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Operator Risk Inspections
+ */
+
+export function useRiskInspectionsListOperatorRiskInspections<TData = Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsListOperatorRiskInspections>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getRiskInspectionsListOperatorRiskInspectionsQueryOptions(operatorId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export type riskInspectionsListCompanyRiskInspectionsResponse200 = {
   data: RiskInspectionListItem[]
@@ -520,3 +645,244 @@ export function useRiskInspectionsGetRiskInspection<TData = Awaited<ReturnType<t
 
 
 
+export type riskInspectionsSearchRiskInspectionStoresResponse200 = {
+  data: StoreCandidate[]
+  status: 200
+}
+
+export type riskInspectionsSearchRiskInspectionStoresResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type riskInspectionsSearchRiskInspectionStoresResponseSuccess = (riskInspectionsSearchRiskInspectionStoresResponse200) & {
+  headers: Headers;
+};
+export type riskInspectionsSearchRiskInspectionStoresResponseError = (riskInspectionsSearchRiskInspectionStoresResponse422) & {
+  headers: Headers;
+};
+
+export const getRiskInspectionsSearchRiskInspectionStoresUrl = (inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/risk-inspections/${inspectionId}/store-candidates?${stringifiedParams}` : `/v1/risk-inspections/${inspectionId}/store-candidates`
+}
+
+/**
+ * Stores of the inspection's operator to link it to, searched by customer, name, address,
+ * or city.
+ * @summary Search Risk Inspection Stores
+ */
+export const riskInspectionsSearchRiskInspectionStores = async (inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options?: Parameters<typeof bffFetch>[1]): Promise<riskInspectionsSearchRiskInspectionStoresResponseSuccess> => {
+
+  return bffFetch<riskInspectionsSearchRiskInspectionStoresResponseSuccess>(getRiskInspectionsSearchRiskInspectionStoresUrl(inspectionId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getRiskInspectionsSearchRiskInspectionStoresQueryKey = (inspectionId: string,
+    params?: RiskInspectionsSearchRiskInspectionStoresParams,) => {
+    return [
+    `/v1/risk-inspections/${inspectionId}/store-candidates`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getRiskInspectionsSearchRiskInspectionStoresQueryOptions = <TData = Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError = HTTPValidationError>(inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getRiskInspectionsSearchRiskInspectionStoresQueryKey(inspectionId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>> = ({ signal }) => riskInspectionsSearchRiskInspectionStores(inspectionId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: inspectionId !== null && inspectionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type RiskInspectionsSearchRiskInspectionStoresQueryResult = NonNullable<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>>
+export type RiskInspectionsSearchRiskInspectionStoresQueryError = HTTPValidationError
+
+
+export function useRiskInspectionsSearchRiskInspectionStores<TData = Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError = HTTPValidationError>(
+ inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>,
+          TError,
+          Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskInspectionsSearchRiskInspectionStores<TData = Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError = HTTPValidationError>(
+ inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>,
+          TError,
+          Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskInspectionsSearchRiskInspectionStores<TData = Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError = HTTPValidationError>(
+ inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Search Risk Inspection Stores
+ */
+
+export function useRiskInspectionsSearchRiskInspectionStores<TData = Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError = HTTPValidationError>(
+ inspectionId: string,
+    params: RiskInspectionsSearchRiskInspectionStoresParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskInspectionsSearchRiskInspectionStores>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getRiskInspectionsSearchRiskInspectionStoresQueryOptions(inspectionId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type riskInspectionsSetRiskInspectionLocationResponse200 = {
+  data: RiskInspectionDetail
+  status: 200
+}
+
+export type riskInspectionsSetRiskInspectionLocationResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type riskInspectionsSetRiskInspectionLocationResponseSuccess = (riskInspectionsSetRiskInspectionLocationResponse200) & {
+  headers: Headers;
+};
+export type riskInspectionsSetRiskInspectionLocationResponseError = (riskInspectionsSetRiskInspectionLocationResponse422) & {
+  headers: Headers;
+};
+
+export const getRiskInspectionsSetRiskInspectionLocationUrl = (inspectionId: string,) => {
+
+
+
+
+  return `/v1/risk-inspections/${inspectionId}/location`
+}
+
+/**
+ * Choose the inspection's store by hand. Automatic linking leaves it alone from then on, and
+ * its photos move to the store's company.
+ * @summary Set Risk Inspection Location
+ */
+export const riskInspectionsSetRiskInspectionLocation = async (inspectionId: string,
+    riskInspectionLocationUpdate: RiskInspectionLocationUpdate, options?: Parameters<typeof bffFetch>[1]): Promise<riskInspectionsSetRiskInspectionLocationResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bffFetch<riskInspectionsSetRiskInspectionLocationResponseSuccess>(getRiskInspectionsSetRiskInspectionLocationUrl(inspectionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(riskInspectionLocationUpdate)
+  }
+);}
+
+
+
+
+
+export const getRiskInspectionsSetRiskInspectionLocationMutationKey = () => ['riskInspectionsSetRiskInspectionLocation'] as const;
+
+export const getRiskInspectionsSetRiskInspectionLocationMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>, TError,RiskInspectionsSetRiskInspectionLocationMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>, TError,RiskInspectionsSetRiskInspectionLocationMutationVariables, TContext> => {
+
+const mutationKey = getRiskInspectionsSetRiskInspectionLocationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>, RiskInspectionsSetRiskInspectionLocationMutationVariables> = (props) => {
+          const {inspectionId,data} = props ?? {};
+
+          return  riskInspectionsSetRiskInspectionLocation(inspectionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RiskInspectionsSetRiskInspectionLocationMutationResult = NonNullable<Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>>
+    export type RiskInspectionsSetRiskInspectionLocationMutationBody = RiskInspectionLocationUpdate
+    export type RiskInspectionsSetRiskInspectionLocationMutationError = HTTPValidationError
+    export type RiskInspectionsSetRiskInspectionLocationMutationVariables = {inspectionId: string;data: RiskInspectionLocationUpdate}
+
+    /**
+ * @summary Set Risk Inspection Location
+ */
+export const useRiskInspectionsSetRiskInspectionLocation = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>, TError,RiskInspectionsSetRiskInspectionLocationMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof riskInspectionsSetRiskInspectionLocation>>,
+        TError,
+        RiskInspectionsSetRiskInspectionLocationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRiskInspectionsSetRiskInspectionLocationMutationOptions(options), queryClient);
+    }

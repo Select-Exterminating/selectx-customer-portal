@@ -13,6 +13,7 @@ import {
   useRiskInspectionsListBillToRiskInspections,
   useRiskInspectionsListCompanyRiskInspections,
   useRiskInspectionsListLocationRiskInspections,
+  useRiskInspectionsListOperatorRiskInspections,
 } from "@/lib/api/generated/risk-inspections/risk-inspections";
 import type { CsvColumn } from "@/lib/export-csv";
 
@@ -31,9 +32,15 @@ export function RiskBadge({ risk, label }: { risk: number | null; label?: string
 const inspectedOn = (i: RiskInspectionListItem) =>
   i.inspected_at ? formatPestPacDate(i.inspected_at, true) : "";
 
-function exportColumns(withStore: boolean): CsvColumn<RiskInspectionListItem>[] {
+function exportColumns(
+  withStore: boolean,
+  withCustomer: boolean,
+): CsvColumn<RiskInspectionListItem>[] {
   return [
     { header: "Inspected", value: inspectedOn },
+    ...(withCustomer
+      ? [{ header: "Customer", value: (i: RiskInspectionListItem) => i.company_name }]
+      : []),
     ...(withStore
       ? [{ header: "Location", value: (i: RiskInspectionListItem) => i.location_name }]
       : []),
@@ -51,10 +58,13 @@ function exportColumns(withStore: boolean): CsvColumn<RiskInspectionListItem>[] 
 function InspectionsTable({
   inspections,
   withStore,
+  withCustomer = false,
   exportName,
 }: {
   inspections: RiskInspectionListItem[];
   withStore: boolean;
+  /** For a list across customers. It also counts the inspections without a store. */
+  withCustomer?: boolean;
   exportName: string;
 }) {
   if (inspections.length === 0) {
@@ -64,12 +74,20 @@ function InspectionsTable({
       </p>
     );
   }
+  const withoutStore = inspections.filter((i) => !i.location_id).length;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-muted-foreground">{inspections.length} risk inspections</p>
+        <p className="text-sm text-muted-foreground">
+          {inspections.length} risk inspections
+          {withCustomer && `, ${withoutStore} without a store`}
+        </p>
         <div className="ml-auto">
-          <ExportButton name={exportName} rows={inspections} columns={exportColumns(withStore)} />
+          <ExportButton
+            name={exportName}
+            rows={inspections}
+            columns={exportColumns(withStore, withCustomer)}
+          />
         </div>
       </div>
       <DataTableFrame>
@@ -79,6 +97,11 @@ function InspectionsTable({
               <th scope="col" className="py-2 pr-3 font-medium">
                 Inspected
               </th>
+              {withCustomer && (
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Customer
+                </th>
+              )}
               {withStore && (
                 <th scope="col" className="py-2 pr-3 font-medium">
                   Location
@@ -100,7 +123,7 @@ function InspectionsTable({
           </thead>
           <tbody className="divide-y divide-border">
             {inspections.map((i) => (
-              <tr key={i.id}>
+              <tr key={i.id} className={i.location_id ? undefined : "bg-warning!"}>
                 <td className="py-2 pr-3">
                   <Link
                     href={`/risk-inspections/${i.id}`}
@@ -115,7 +138,19 @@ function InspectionsTable({
                     </Badge>
                   )}
                 </td>
-                {withStore && <td className="py-2 pr-3">{i.location_name ?? i.store_label}</td>}
+                {withCustomer && <td className="py-2 pr-3">{i.company_name ?? "—"}</td>}
+                {withStore && (
+                  <td className="py-2 pr-3">
+                    {i.location_id ? (
+                      i.location_name
+                    ) : (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">No Store</Badge>
+                        {i.store_label ?? i.work_order_ref}
+                      </span>
+                    )}
+                  </td>
+                )}
                 <td className="hidden py-2 pr-3 sm:table-cell">{i.inspector_name ?? "—"}</td>
                 <td className="py-2 pr-3">
                   {i.ramp_recommendation != null ? `RAMP ${i.ramp_recommendation}` : "—"}
@@ -153,6 +188,29 @@ function ListState({
     );
   }
   return <>{children()}</>;
+}
+
+/** All the operator's risk inspections, those without a store first and highlighted. */
+export function OperatorRiskInspections({
+  operatorId,
+  operatorName,
+}: {
+  operatorId: string;
+  operatorName: string;
+}) {
+  const query = useRiskInspectionsListOperatorRiskInspections(operatorId);
+  return (
+    <ListState query={query}>
+      {() => (
+        <InspectionsTable
+          inspections={query.data?.data ?? []}
+          withStore
+          withCustomer
+          exportName={`${operatorName} risk inspections`}
+        />
+      )}
+    </ListState>
+  );
 }
 
 /** Every location's risk inspections under the company's bill-tos, newest first. */

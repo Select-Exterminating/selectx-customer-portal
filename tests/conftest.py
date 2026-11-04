@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from dotenv import dotenv_values
+from sqlalchemy import create_engine, make_url, text
 
 # Point the app at the dedicated test database before anything imports settings.
 _env = {**dotenv_values(".env"), **os.environ}
@@ -10,6 +11,20 @@ TEST_DATABASE_URL = _env.get(
     "postgresql+psycopg://customer_portal:customer_portal@localhost:5433/customer_portal_test",
 )
 TEST_DB_NAME = "customer_portal_test"
+# pytest-xdist runs tests in several processes. They clean tables between tests, so each gets a
+# database of its own, created on first use from the one the Postgres image sets up.
+_XDIST_WORKER = os.environ.get("PYTEST_XDIST_WORKER")
+if _XDIST_WORKER:
+    _base_url = make_url(TEST_DATABASE_URL)
+    TEST_DB_NAME = f"{TEST_DB_NAME}_{_XDIST_WORKER}"
+    TEST_DATABASE_URL = _base_url.set(database=TEST_DB_NAME).render_as_string(hide_password=False)
+    _admin = create_engine(_base_url, isolation_level="AUTOCOMMIT")
+    with _admin.connect() as _conn:
+        if not _conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": TEST_DB_NAME}
+        ).scalar():
+            _conn.execute(text(f'CREATE DATABASE "{TEST_DB_NAME}" TEMPLATE template0'))
+    _admin.dispose()
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ.setdefault("JWT_SECRET", "test-secret-" + "x" * 32)
 # Fixed test-only Fernet key so ciphertext written by fixtures stays readable.
@@ -31,11 +46,12 @@ from pathlib import Path  # noqa: E402
 import pytest  # noqa: E402
 import responses  # noqa: E402
 from alembic.config import Config  # noqa: E402
+from argon2 import PasswordHasher  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
 
 from alembic import command  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
+from app.db.base import Base  # noqa: E402
 from app.db.session import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
@@ -66,6 +82,7 @@ from app.models import (  # noqa: E402
     WebhookEvent,
     WebhookEventStatus,
 )
+from app.security import passwords  # noqa: E402
 from app.security.permissions import SystemRole  # noqa: E402
 from app.security.secrets import encrypt  # noqa: E402
 from app.services import gocanvas_connection, pestpac_connection  # noqa: E402
@@ -73,6 +90,11 @@ from app.services.auth import create_user  # noqa: E402
 from app.services.rbac import get_platform_tenant, get_system_role  # noqa: E402
 
 PASSWORD = "correct horse battery staple"
+
+
+# Tests log in and create users constantly, and production's Argon2 cost is deliberately slow
+# (about 100 ms a hash). These tests check the flows, not the cost.
+passwords._hasher = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -87,30 +109,61 @@ def _database():
     yield
 
 
+_CLEANED_TABLES = {
+    "contact_links",
+    "contacts",
+    "location_areas",
+    "area_types",
+    "zone_labels",
+    "inspection_photos",
+    "inspection_photo_values",
+    "stored_files",
+    "risk_inspection_zones",
+    "risk_inspection_materials",
+    "risk_inspection_summaries",
+    "inspection_responses",
+    "inspection_submissions",
+    "inspection_form_fields",
+    "inspection_form_zones",
+    "inspection_forms",
+    "invoice_lines",
+    "invoices",
+    "inspection_finding_items",
+    "inspection_findings",
+    "inspection_finding_requests",
+    "reports",
+    "documents",
+    "condition_inspections",
+    "conditions",
+    "report_templates",
+    "webhook_events",
+    "notes",
+    "sync_jobs",
+    "service_orders",
+    "technicians",
+    "locations",
+    "pestpac_connections",
+    "gocanvas_connections",
+    "bill_tos",
+    "company_memberships",
+    "companies",
+    "memberships",
+    "auth_sessions",
+    "credentials",
+    "users",
+    "login_throttles",
+}
+# DELETE, children first: TRUNCATE recreates every table's files, about 140 ms on each test.
+_CLEANED_IN_ORDER = [t for t in reversed(Base.metadata.sorted_tables) if t.name in _CLEANED_TABLES]
+
+
 @pytest.fixture(autouse=True)
 def _clean_tables():
     yield
     # Keep migration seed data (permissions, system roles, platform tenant).
     with engine.begin() as conn:
-        conn.execute(
-            text(
-                "TRUNCATE contact_links, contacts, location_areas, area_types, zone_labels, "
-                "inspection_photos, inspection_photo_values, stored_files, "
-                "risk_inspection_zones, risk_inspection_materials, "
-                "risk_inspection_summaries, inspection_responses, inspection_submissions, "
-                "inspection_form_fields, inspection_form_zones, inspection_forms, "
-                "invoice_lines, invoices, inspection_finding_items, inspection_findings, "
-                "inspection_finding_requests, reports, "
-                "documents, condition_inspections, "
-                "conditions, report_templates, "
-                "webhook_events, notes, sync_jobs, "
-                "service_orders, "
-                "technicians, locations, pestpac_connections, gocanvas_connections, bill_tos, "
-                "company_memberships, "
-                "companies, memberships, "
-                "auth_sessions, credentials, users, login_throttles"
-            )
-        )
+        for table in _CLEANED_IN_ORDER:
+            conn.execute(table.delete())
         conn.execute(text("DELETE FROM roles WHERE tenant_id IS NOT NULL"))
         conn.execute(text("DELETE FROM tenants WHERE kind <> 'platform'"))
     pestpac_connection._clients.clear()

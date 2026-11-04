@@ -672,9 +672,12 @@ def _link(db: Session, submission: InspectionSubmission) -> None:
     Only Chipotle's stores have numbers. Sweetgreen's are found by address, so the address is
     tried only when the form names no store number: one that matches nothing (an inspector who
     picked another customer's "Loc #304851") stays unlinked rather than following that address.
+
+    A store chosen by hand stays: only an order at that store is linked.
     """
+    chosen_location_id = submission.location_id if submission.location_linked_at else None
     submission.service_order_id = None
-    submission.location_id = None
+    submission.location_id = chosen_location_id
     ref = submission.work_order_ref or ""
     if ref.isdigit():
         order = db.scalar(
@@ -683,9 +686,11 @@ def _link(db: Session, submission: InspectionSubmission) -> None:
                 ServiceOrder.order_number == ref,
             )
         )
-        if order is not None:
+        if order is not None and chosen_location_id in (None, order.location_id):
             submission.service_order_id = order.id
             submission.location_id = order.location_id
+    if chosen_location_id is not None:
+        return
     for number in (submission.store_number, _store_number_in_work_order(ref)):
         if submission.location_id is None and number:
             submission.location_id = _location_by_store_number(db, submission, number)
@@ -728,6 +733,23 @@ def _location_by_store_number(
         .limit(2)
     ).all()
     return matches[0] if len(matches) == 1 else None
+
+
+def choose_location(
+    db: Session, submission: InspectionSubmission, location_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    """Set the store by hand and move the photos to its company. An order at another store no
+    longer fits, so its link is cleared."""
+    if submission.service_order_id is not None:
+        order_location_id = db.scalar(
+            select(ServiceOrder.location_id).where(ServiceOrder.id == submission.service_order_id)
+        )
+        if order_location_id != location_id:
+            submission.service_order_id = None
+    submission.location_id = location_id
+    submission.location_linked_by_user_id = user_id
+    submission.location_linked_at = datetime.now(UTC)
+    _sync_file_companies(db, submission)
 
 
 def relink_submissions(

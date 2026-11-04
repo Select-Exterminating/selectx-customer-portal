@@ -20,6 +20,7 @@ export interface RiskInspectionDetail {
   store_label: string | null;
   location_id: string | null;
   location_name: string | null;
+  company_name: string | null;
   work_order_ref: string | null;
   service_order_id: string | null;
   ramp_recommendation: number | null;
@@ -28,7 +29,10 @@ export interface RiskInspectionDetail {
   zones_with_activity: number;
   is_revision: boolean;
   revised_at: string | null;
+  operator_id: string;
   trail: Crumb[];
+  location_linked_at: string | null;
+  location_linked_by: string | null;
   address: string | null;
   city: string | null;
   manager_summary: string | null;

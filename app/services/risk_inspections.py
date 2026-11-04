@@ -1,13 +1,13 @@
 """Reading risk inspections: a company's or location's list, and one inspection's report.
 
-Only submissions linked to a location are listed (that's how they belong to a company); an
-unlinked one can still be opened by id.
+A company's lists hold only submissions linked to a location (that's how they belong to a
+company). The operator's list holds all of them, those without a store first.
 """
 
 import uuid
 from collections import defaultdict
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import (
@@ -25,9 +25,17 @@ from app.schemas.inspections import (
     RiskInspectionMaterialRead,
     RiskInspectionPhoto,
     RiskInspectionZoneRead,
+    StoreCandidate,
 )
 from app.services import trail
 from app.services.inspections import MATERIAL_PREFIX
+from app.services.service_orders import escape_like
+
+_NEWEST_FIRST = (
+    InspectionSubmission.inspected_at.desc().nulls_last(),
+    InspectionSubmission.gocanvas_submission_id.desc(),
+)
+STORE_SEARCH_LIMIT = 25
 
 
 def _risk_submissions():
@@ -40,10 +48,7 @@ def _risk_submissions():
             selectinload(InspectionSubmission.risk_summary),
             selectinload(InspectionSubmission.location),
         )
-        .order_by(
-            InspectionSubmission.inspected_at.desc().nulls_last(),
-            InspectionSubmission.gocanvas_submission_id.desc(),
-        )
+        .order_by(*_NEWEST_FIRST)
     )
 
 
@@ -76,6 +81,57 @@ def list_for_location(db: Session, location_id: uuid.UUID) -> list[InspectionSub
     )
 
 
+def list_for_operator(db: Session, operator_id: uuid.UUID) -> list[InspectionSubmission]:
+    """All the operator's risk inspections: those without a store first, then newest first."""
+    return list(
+        db.scalars(
+            _risk_submissions()
+            .where(InspectionSubmission.operator_id == operator_id)
+            .order_by(None)
+            .order_by(InspectionSubmission.location_id.is_not(None), *_NEWEST_FIRST)
+        )
+    )
+
+
+def search_stores(db: Session, operator_id: uuid.UUID, q: str) -> list[StoreCandidate]:
+    """The operator's current stores matching every word of `q`, in any of the customer's name,
+    the store's names, address, or city."""
+    fields = (
+        Location.company_name,
+        Location.pestpac_company,
+        Location.description,
+        Location.address,
+        Location.city,
+    )
+    words = [
+        or_(*(field.ilike(f"%{escape_like(word)}%") for field in fields)) for word in q.split()
+    ]
+    if not words:
+        return []
+    locations = db.scalars(
+        select(Location)
+        .where(
+            Location.operator_id == operator_id,
+            Location.removed_at.is_(None),
+            and_(*words),
+        )
+        .order_by(func.upper(Location.pestpac_company), Location.address)
+        .limit(STORE_SEARCH_LIMIT)
+    )
+    return [
+        StoreCandidate(
+            id=location.id,
+            name=trail.location_name(location),
+            description=location.description,
+            company_name=location.company_name,
+            address=location.address,
+            city=location.city,
+            state=location.state,
+        )
+        for location in locations
+    ]
+
+
 def get(db: Session, submission_id: uuid.UUID) -> InspectionSubmission | None:
     """A risk inspection by our id (None if missing or not a risk inspection)."""
     return db.scalar(_risk_submissions().where(InspectionSubmission.id == submission_id))
@@ -94,6 +150,7 @@ def list_item(submission: InspectionSubmission) -> RiskInspectionListItem:
         store_label=submission.store_label,
         location_id=submission.location_id,
         location_name=trail.location_name(submission.location) if submission.location else None,
+        company_name=submission.location.company_name if submission.location else None,
         work_order_ref=submission.work_order_ref,
         service_order_id=submission.service_order_id,
         ramp_recommendation=summary.ramp_recommendation if summary else None,
@@ -143,6 +200,11 @@ def detail(db: Session, submission: InspectionSubmission) -> RiskInspectionDetai
             company_id=company_id,
             bill_to_id=location.bill_to_id if location else None,
             location_id=location.id if location else None,
+        ),
+        operator_id=submission.operator_id,
+        location_linked_at=submission.location_linked_at,
+        location_linked_by=(
+            submission.location_linked_by.email if submission.location_linked_by else None
         ),
         address=submission.address,
         city=submission.city,

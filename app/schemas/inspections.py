@@ -19,6 +19,8 @@ class RiskInspectionListItem(BaseModel):
     store_label: str | None
     location_id: uuid.UUID | None
     location_name: str | None
+    # The location's customer.
+    company_name: str | None
     work_order_ref: str | None
     service_order_id: uuid.UUID | None
     ramp_recommendation: int | None
@@ -28,6 +30,22 @@ class RiskInspectionListItem(BaseModel):
     zones_with_activity: int
     is_revision: bool
     revised_at: datetime | None
+
+
+class StoreCandidate(BaseModel):
+    """A store an inspection can be linked to, named with its customer."""
+
+    id: uuid.UUID
+    name: str
+    description: str | None
+    company_name: str | None
+    address: str | None
+    city: str | None
+    state: str | None
+
+
+class RiskInspectionLocationUpdate(BaseModel):
+    location_id: uuid.UUID
 
 
 class RiskInspectionPhoto(BaseModel):
@@ -77,7 +95,11 @@ class RiskInspectionMaterialRead(BaseModel):
 class RiskInspectionDetail(RiskInspectionListItem):
     """A risk inspection with everything its report shows."""
 
+    operator_id: uuid.UUID
     trail: list[Crumb]
+    # Set when someone chose the store by hand.
+    location_linked_at: datetime | None
+    location_linked_by: str | None
     address: str | None
     city: str | None
     manager_summary: str | None

@@ -5827,6 +5827,59 @@
         }
       }
     },
+    "/v1/operators/{operator_id}/risk-inspections": {
+      "get": {
+        "tags": [
+          "risk-inspections"
+        ],
+        "summary": "List Operator Risk Inspections",
+        "description": "All the operator's risk inspections, those without a store first, then newest first.",
+        "operationId": "risk-inspections-list_operator_risk_inspections",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Operator Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiskInspectionListItem"
+                  },
+                  "title": "Response Risk-Inspections-List Operator Risk Inspections"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/companies/{company_id}/risk-inspections": {
       "get": {
         "tags": [
@@ -6011,6 +6064,129 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskInspectionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/risk-inspections/{inspection_id}/store-candidates": {
+      "get": {
+        "tags": [
+          "risk-inspections"
+        ],
+        "summary": "Search Risk Inspection Stores",
+        "description": "Stores of the inspection's operator to link it to, searched by customer, name, address,\nor city.",
+        "operationId": "risk-inspections-search_risk_inspection_stores",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inspection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Inspection Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreCandidate"
+                  },
+                  "title": "Response Risk-Inspections-Search Risk Inspection Stores"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/risk-inspections/{inspection_id}/location": {
+      "put": {
+        "tags": [
+          "risk-inspections"
+        ],
+        "summary": "Set Risk Inspection Location",
+        "description": "Choose the inspection's store by hand. Automatic linking leaves it alone from then on, and\nits photos move to the store's company.",
+        "operationId": "risk-inspections-set_risk_inspection_location",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inspection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Inspection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskInspectionLocationUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -16482,6 +16658,17 @@
             ],
             "title": "Location Name"
           },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
           "work_order_ref": {
             "anyOf": [
               {
@@ -16551,12 +16738,40 @@
             ],
             "title": "Revised At"
           },
+          "operator_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operator Id"
+          },
           "trail": {
             "items": {
               "$ref": "#/components/schemas/Crumb"
             },
             "type": "array",
             "title": "Trail"
+          },
+          "location_linked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Linked At"
+          },
+          "location_linked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Linked By"
           },
           "address": {
             "anyOf": [
@@ -16635,6 +16850,7 @@
           "store_label",
           "location_id",
           "location_name",
+          "company_name",
           "work_order_ref",
           "service_order_id",
           "ramp_recommendation",
@@ -16643,7 +16859,10 @@
           "zones_with_activity",
           "is_revision",
           "revised_at",
+          "operator_id",
           "trail",
+          "location_linked_at",
+          "location_linked_by",
           "address",
           "city",
           "manager_summary",
@@ -16735,6 +16954,17 @@
             ],
             "title": "Location Name"
           },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
           "work_order_ref": {
             "anyOf": [
               {
@@ -16815,6 +17045,7 @@
           "store_label",
           "location_id",
           "location_name",
+          "company_name",
           "work_order_ref",
           "service_order_id",
           "ramp_recommendation",
@@ -16826,6 +17057,20 @@
         ],
         "title": "RiskInspectionListItem",
         "description": "One risk inspection in a company's or location's list."
+      },
+      "RiskInspectionLocationUpdate": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id"
+        ],
+        "title": "RiskInspectionLocationUpdate"
       },
       "RiskInspectionMaterialRead": {
         "properties": {
@@ -18112,6 +18357,86 @@
           "with_rodents"
         ],
         "title": "StateCoverage"
+      },
+      "StoreCandidate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "company_name",
+          "address",
+          "city",
+          "state"
+        ],
+        "title": "StoreCandidate",
+        "description": "A store an inspection can be linked to, named with its customer."
       },
       "StoreProfile": {
         "properties": {

@@ -17,6 +17,7 @@ export interface RiskInspectionListItem {
   store_label: string | null;
   location_id: string | null;
   location_name: string | null;
+  company_name: string | null;
   work_order_ref: string | null;
   service_order_id: string | null;
   ramp_recommendation: number | null;

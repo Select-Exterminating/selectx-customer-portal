@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 
 import { DataTable } from "@/components/data-table";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { RiskInspectionStoreDialog } from "@/components/risk-inspection-store-dialog";
 import { RiskBadge } from "@/components/risk-inspections-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import type {
   RiskInspectionZoneRead,
 } from "@/lib/api/generated/model";
 import { useRiskInspectionsGetRiskInspection } from "@/lib/api/generated/risk-inspections/risk-inspections";
+import { usePermissions } from "@/lib/permissions";
 import { useDocumentTitle } from "@/lib/use-document-title";
 
 const fileUrl = (photo: RiskInspectionPhoto) => `/api/bff/v1/files/${photo.file_id}`;
@@ -78,7 +80,13 @@ function ServiceInformation({ report: r }: { report: RiskInspectionDetail }) {
                 {r.location_name ?? r.store_label}
               </Link>
             ) : (
-              r.store_label
+              (r.store_label ?? "—")
+            )}
+            {r.location_linked_at && (
+              <span className="block text-sm text-muted-foreground">
+                Chosen by {r.location_linked_by ?? "a former user"} on{" "}
+                {new Date(r.location_linked_at).toLocaleDateString()}
+              </span>
             )}
           </Field>
           <Field label="Address">{r.address}</Field>
@@ -318,6 +326,7 @@ function MaterialUse({ report: r }: { report: RiskInspectionDetail }) {
 /** A risk inspection laid out like GoCanvas's RiskGate PDF report. */
 export function RiskInspectionReport() {
   const { inspectionId } = useParams<{ inspectionId: string }>();
+  const { can } = usePermissions();
   const query = useRiskInspectionsGetRiskInspection(inspectionId);
   const r = query.data?.data;
   useDocumentTitle(r ? `Risk inspection ${wallClock(r.inspected_at, "date")}` : undefined);
@@ -338,7 +347,10 @@ export function RiskInspectionReport() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Breadcrumbs trail={r.trail} />
-        <h1 className="mt-2 text-3xl">RiskGate inspection</h1>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl">RiskGate inspection</h1>
+          {can("bill_tos:write", r.operator_id) && <RiskInspectionStoreDialog report={r} />}
+        </div>
         <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
           <span>
             {[r.location_name ?? r.store_label, wallClock(r.inspected_at, "date")]
@@ -355,6 +367,15 @@ export function RiskInspectionReport() {
           <AlertDescription>
             {r.photos_pending} photo field{r.photos_pending === 1 ? "" : "s"} haven&apos;t been
             fetched from GoCanvas yet.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!r.location_id && (
+        <Alert>
+          <AlertDescription>
+            This inspection isn&apos;t linked to a store, so it isn&apos;t on any customer&apos;s
+            lists or dashboard.
           </AlertDescription>
         </Alert>
       )}
