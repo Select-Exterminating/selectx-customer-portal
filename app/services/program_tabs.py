@@ -6,11 +6,12 @@ GoCanvas submissions (`risk_inspections`), scored like the portal's `build_asses
 Everything is calculated on read and scoped to one company.
 """
 
+import re
 import statistics
 import uuid
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -19,6 +20,7 @@ from app.models import (
     AssessmentTarget,
     BillTo,
     Company,
+    Condition,
     InspectionFinding,
     InspectionFindingItem,
     InspectionForm,
@@ -40,9 +42,13 @@ from app.schemas.program_tabs import (
     AssessmentTargetRow,
     AssessmentZone,
     Breakdown,
+    CeilingReview,
     CohortPoint,
     ConcernMonth,
+    ConditionReview,
+    ConditionRow,
     ExecutiveTab,
+    FrontLineReview,
     GeneratedReport,
     HealthGroup,
     MonthVisits,
@@ -50,14 +56,17 @@ from app.schemas.program_tabs import (
     PhaseActivity,
     ProgramTabs,
     RecentActivityStore,
+    RecurrenceDrivers,
     RecurringSanitationStore,
     ReportLibraryPage,
     RiskAssessmentDashboard,
     RodentActivityTab,
     SanitationTab,
     SiteCondition,
+    SixMonthReview,
     SpeciesOutcome,
     StateCoverage,
+    StoreRef,
     StructuralMonth,
     StructuralTab,
     TrackerRow,
@@ -452,7 +461,225 @@ def _health(groups: dict[str, list[StoreMetrics]]) -> list[HealthGroup]:
     ]
 
 
+DRIVER_DAYS = 90
+SIX_MONTHS_DAYS = 183
+SERVICE_GAP_DAYS = 21
+ENVIRONMENTAL_ZONES = {"exterior_perimeter", "dumpster_waste", "shared_structures"}
+CONDITION_OWNERS = {"Customer": "Customer", "PestManagement": "Select"}
+
+
+def _activity_locations(db: Session, ids: list[uuid.UUID]) -> list[str]:
+    """Each visit with activity: the words of where it was found, a location's orders on one date
+    merged, for measures that need the technician's words rather than the zones."""
+    visits: dict[tuple, list[str]] = defaultdict(list)
+    for location_id, work_date, places in db.execute(
+        select(
+            ServiceOrder.location_id, ServiceOrder.work_date, InspectionFinding.activity_locations
+        )
+        .join(InspectionFinding, InspectionFinding.service_order_id == ServiceOrder.id)
+        .where(
+            ServiceOrder.location_id.in_(ids),
+            ServiceOrder.posted.is_(True),
+            ServiceOrder.work_date.is_not(None),
+            InspectionFinding.rodent_activity.is_not(None),
+            InspectionFinding.rodent_activity != "none",
+        )
+    ):
+        visits[(location_id, work_date.date())].extend(places or [])
+    return [" ".join(places).lower() for places in visits.values()]
+
+
+def _share_naming(visits: list[str], words: str) -> float | None:
+    return _rate(sum(1 for v in visits if re.search(words, v)), len(visits)) if visits else None
+
+
+def _assessment_reviews(
+    db: Session, ids: list[uuid.UUID], assessments: RiskAssessmentDashboard
+) -> tuple[CeilingReview, FrontLineReview]:
+    """Ceilings and the front line, from assessment zones and where visits found activity. A
+    zone's name is the form's: the DML is measured through Service Line / Food Preparation."""
+    zones = {z.zone: z for z in assessments.zones}
+    ceiling = next((z for z in assessments.zones if z.zone.startswith("Ceiling")), None)
+    dml = next((z for z in assessments.zones if z.zone.startswith("Service Line")), None)
+    front = zones.get("Front of House")
+    visits = _activity_locations(db, ids)
+    return (
+        CeilingReview(
+            stores_assessed=len(assessments.stores),
+            drop_ceilings=next(
+                (
+                    c.stores
+                    for c in assessments.site
+                    if c.attribute == "Ceiling" and c.value == "Drop Ceiling"
+                ),
+                0,
+            ),
+            zone_inspected=ceiling.inspected if ceiling else 0,
+            zone_rodent_rate=ceiling.rodent_rate if ceiling else None,
+            rodent_zone_stores=sum(1 for s in assessments.stores if s.rodent_zones),
+            activity_visit_share=_share_naming(visits, "ceiling|overhead"),
+        ),
+        FrontLineReview(
+            dml_inspected=dml.inspected if dml else 0,
+            dml_rodent_rate=dml.rodent_rate if dml else None,
+            dml_visit_share=_share_naming(visits, r"\bdml\b|make ?line|digital|service line"),
+            front_inspected=front.inspected if front else 0,
+            front_rodent_rate=front.rodent_rate if front else None,
+            front_visit_share=_share_naming(
+                visits, "dining|front of house|front line|serving line"
+            ),
+        ),
+    )
+
+
+def _mall_locations(db: Session, ids: list[uuid.UUID]) -> set[uuid.UUID]:
+    """Locations an assessment recorded as being in a mall."""
+    return set(
+        db.scalars(
+            select(InspectionSubmission.location_id)
+            .join(RiskInspectionZone, RiskInspectionZone.submission_id == InspectionSubmission.id)
+            .where(
+                InspectionSubmission.location_id.in_(ids),
+                RiskInspectionZone.attributes["in_mall"].astext == "true",
+            )
+        )
+    )
+
+
+def _drivers(
+    treated: list[StoreMetrics], stores: list[StoreMetrics], malls: set[uuid.UUID], as_of: date
+) -> RecurrenceDrivers:
+    """What's behind the stores still stabilizing, over the last 90 days. A store can show more
+    than one."""
+    active = [s for s in treated if not s.stabilized_now]
+
+    def share(test) -> float | None:
+        return _rate(sum(1 for s in active if test(s)), len(active)) if active else None
+
+    def recent(s: StoreMetrics) -> list[Visit]:
+        return [v for v in s.visits if (as_of - v.day).days <= DRIVER_DAYS]
+
+    return RecurrenceDrivers(
+        active=len(active),
+        structural=share(
+            lambda s: any(
+                v.exclusion == "compromised" or any(i[2] == "open" for i in v.structural)
+                for v in recent(s)
+            )
+        ),
+        operational=share(lambda s: any(v.sanitation > 0 for v in recent(s))),
+        environmental=share(
+            lambda s: (
+                s.location_id in malls or any(v.zones & ENVIRONMENTAL_ZONES for v in recent(s))
+            )
+        ),
+        client_reported=sum(1 for s in stores if any(f[0] == "client" for f in s.flags)),
+    )
+
+
+def _first_ramp_orders(db: Session, ids: list[uuid.UUID]) -> dict[uuid.UUID, date]:
+    """Each location's first worked RAMP 1/2/3 order. PestPac's RAMP Monitoring code only began in
+    June 2026, so it can't date a store's program yet; the tracker's phase dates aren't held."""
+    if not ids:
+        return {}
+    return {
+        location_id: first.date()
+        for location_id, first in db.execute(
+            select(ServiceOrder.location_id, func.min(ServiceOrder.work_date))
+            .where(
+                ServiceOrder.location_id.in_(ids),
+                ServiceOrder.posted.is_(True),
+                func.upper(func.trim(ServiceOrder.service_code)).in_(RAMP_CODES),
+            )
+            .group_by(ServiceOrder.location_id)
+        )
+        if first is not None
+    }
+
+
+def _six_month(
+    treated: list[StoreMetrics],
+    by_id: dict[uuid.UUID, Location],
+    first_ramp: dict[uuid.UUID, date],
+    as_of: date,
+) -> SixMonthReview:
+    """Stores six months past their first RAMP order: is the program still holding them?"""
+    after: dict[uuid.UUID, list[Visit]] = {}
+    for s in treated:
+        began = first_ramp.get(s.location_id)
+        if began and (as_of - began).days >= SIX_MONTHS_DAYS:
+            cutoff = began + timedelta(days=SIX_MONTHS_DAYS)
+            after[s.location_id] = [v for v in s.visits if v.day > cutoff]
+
+    def gap_with_activity(visits: list[Visit]) -> bool:
+        services = [v for v in visits if v.service]
+        return any(
+            (b.day - a.day).days > SERVICE_GAP_DAYS and (b.activity or 0) > 0
+            for a, b in zip(services, services[1:], strict=False)
+        )
+
+    with_activity = [
+        location_id
+        for location_id, visits in after.items()
+        if any((v.activity or 0) > 0 for v in visits)
+    ]
+    return SixMonthReview(
+        stores=len(after),
+        stabilized=sum(1 for s in treated if s.location_id in after and s.stabilized_now),
+        activity_after=len(with_activity),
+        gaps_with_activity=sum(1 for visits in after.values() if gap_with_activity(visits)),
+        activity_stores=[StoreRef(**_ref(by_id[location_id])) for location_id in with_activity],
+    )
+
+
+def _conditions(
+    db: Session, ids: list[uuid.UUID], by_id: dict[uuid.UUID, Location]
+) -> ConditionReview:
+    """PestPac conditions at these stores and who owns them. Voided ones don't count."""
+    rows = [
+        c
+        for c in db.scalars(
+            select(Condition).where(Condition.location_id.in_(ids), Condition.removed_at.is_(None))
+        )
+        if c.status != "Void"
+    ]
+
+    def owner(c: Condition) -> str:
+        return CONDITION_OWNERS.get(c.responsibility or "", "To be determined")
+
+    high_open = sorted(
+        (c for c in rows if c.status == "Open" and c.severity == "High"),
+        key=lambda c: c.date_opened or datetime.min,
+        reverse=True,
+    )
+    return ConditionReview(
+        found=len(rows),
+        assigned=sum(1 for c in rows if owner(c) != "To be determined"),
+        open=sum(1 for c in rows if c.status == "Open"),
+        resolved=sum(1 for c in rows if c.status == "Resolved"),
+        owners=[
+            VisitTypeCount(label=label, visits=n)
+            for label, n in Counter(owner(c) for c in rows).most_common()
+        ],
+        high_open=[
+            ConditionRow(
+                **_ref(by_id[c.location_id]),
+                area=c.area,
+                category=c.category,
+                severity=c.severity,
+                owner=owner(c),
+                opened=c.date_opened.date() if c.date_opened else None,
+            )
+            for c in high_open
+        ],
+    )
+
+
 def _executive(
+    db: Session,
+    company_id: uuid.UUID,
+    bill_to_id: uuid.UUID | None,
+    state: str | None,
     stores: list[StoreMetrics],
     by_id: dict[uuid.UUID, Location],
     by_code: Counter,
@@ -479,6 +706,9 @@ def _executive(
         by_tier[s.tier or "Not tiered"].append(s)
     tiers = Counter(s.tier for s in treated if s.tier)
     cadence = Counter(c for s in treated if (c := _cadence(s, as_of)))
+    ids = list(by_id)
+    assessments = risk_assessment_dashboard(db, company_id, bill_to_id=bill_to_id, state=state)
+    ceilings, front_line = _assessment_reviews(db, ids, assessments)
     return ExecutiveTab(
         inception=min(days, default=None),
         through=max(days, default=None),
@@ -505,6 +735,11 @@ def _executive(
             )
             for phase in ("RAMP", "Monitoring")
         ],
+        ceilings=ceilings,
+        front_line=front_line,
+        drivers=_drivers(treated, stores, _mall_locations(db, ids), as_of),
+        six_month=_six_month(treated, by_id, _first_ramp_orders(db, ids), as_of),
+        conditions=_conditions(db, ids, by_id),
         cadence=[VisitTypeCount(label=c, visits=n) for c, n in cadence.most_common()],
     )
 
@@ -558,7 +793,18 @@ def program_tabs(
             tracker_row(s)
             for s in sorted(tracked, key=lambda s: s.first_service or date.max, reverse=True)
         ],
-        executive=_executive(stores, by_id, by_code, by_month, phases, as_of),
+        executive=_executive(
+            db,
+            company_id,
+            bill_to_id,
+            state,
+            stores,
+            by_id,
+            by_code,
+            by_month,
+            phases,
+            as_of,
+        ),
     )
 
 

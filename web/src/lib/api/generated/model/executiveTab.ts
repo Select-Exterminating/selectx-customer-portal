@@ -4,9 +4,14 @@
  * Customer Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { CeilingReview } from './ceilingReview';
+import type { ConditionReview } from './conditionReview';
+import type { FrontLineReview } from './frontLineReview';
 import type { HealthGroup } from './healthGroup';
 import type { MonthVisits } from './monthVisits';
 import type { PhaseActivity } from './phaseActivity';
+import type { RecurrenceDrivers } from './recurrenceDrivers';
+import type { SixMonthReview } from './sixMonthReview';
 import type { VisitTypeCount } from './visitTypeCount';
 
 export interface ExecutiveTab {
@@ -27,5 +32,10 @@ export interface ExecutiveTab {
   by_state: HealthGroup[];
   by_tier: HealthGroup[];
   phases: PhaseActivity[];
+  ceilings: CeilingReview;
+  front_line: FrontLineReview;
+  drivers: RecurrenceDrivers;
+  six_month: SixMonthReview;
+  conditions: ConditionReview;
   cadence: VisitTypeCount[];
 }

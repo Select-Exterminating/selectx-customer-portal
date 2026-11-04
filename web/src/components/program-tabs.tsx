@@ -13,6 +13,7 @@ import {
 } from "recharts";
 
 import {
+  AssessmentCoverage,
   BAND_COLOR,
   ChartCard,
   day,
@@ -22,6 +23,15 @@ import {
   pct,
   STATEMENT_BAND,
 } from "@/components/program-overview";
+import {
+  Ceilings,
+  ConditionOwnership,
+  Drivers,
+  FrontLine,
+  PresentFrame,
+  SixMonth,
+  Slide,
+} from "@/components/executive-review-sections";
 import { DataTable, DataTableFrame } from "@/components/data-table";
 import { StoreLink } from "@/components/dashboard-link";
 import { StatTile } from "@/components/stat-tile";
@@ -1038,185 +1048,223 @@ function HealthTable({
   );
 }
 
-function Executive({ d }: { d: ProgramTabs }) {
+const EXECUTIVE_SLIDES = 11;
+
+function Executive({ d, scope }: { d: ProgramTabs; scope: Scope }) {
   const e = d.executive;
   const reduction =
     e.risk_start && e.risk_now !== null ? (e.risk_start - e.risk_now) / e.risk_start : null;
   const tiers = e.tiers.map((t) => `${integer.format(t.visits)} ${t.label}`).join(" · ");
   return (
-    <div className="flex flex-col gap-8">
-      <section className={STATEMENT_BAND}>
-        <Eyebrow className="text-brand-green">
-          Executive review · live from the field record
-        </Eyebrow>
-        <h2 className="mt-3 max-w-4xl text-2xl leading-snug sm:text-3xl">
-          <span className="text-highlight">{integer.format(e.stores_serviced)} stores</span> served
-          since {day(e.inception)},{" "}
-          <span className="text-highlight">{integer.format(e.stabilized_now)} stabilized</span>{" "}
-          today.
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm text-ink-muted">
-          Every figure here is calculated from completed service visits and their findings, through{" "}
-          {day(e.through)}.
-        </p>
-      </section>
+    <PresentFrame count={EXECUTIVE_SLIDES}>
+      <Slide n={0}>
+        <section className={STATEMENT_BAND}>
+          <Eyebrow className="text-brand-green">
+            Executive review · live from the field record
+          </Eyebrow>
+          <h2 className="mt-3 max-w-4xl text-2xl leading-snug sm:text-3xl">
+            <span className="text-highlight">{integer.format(e.stores_serviced)} stores</span>{" "}
+            served since {day(e.inception)},{" "}
+            <span className="text-highlight">{integer.format(e.stabilized_now)} stabilized</span>{" "}
+            today.
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm text-ink-muted">
+            Every figure here is calculated from completed service visits and their findings,
+            through {day(e.through)}.
+          </p>
+        </section>
+      </Slide>
 
-      <section className="flex flex-col gap-4">
-        <Eyebrow>Section 01 · Investment and progress</Eyebrow>
-        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile
-            value={integer.format(e.stores_serviced)}
-            label="Stores serviced"
-            note={tiers || undefined}
-          />
-          <Tile value={integer.format(e.service_visits)} label="Service visits" />
-          <Tile
-            value={integer.format(e.captures)}
-            label="Rodent captures"
-            note="stated in the notes"
-          />
-          <Tile
-            value={integer.format(e.visit_types.reduce((t, v) => t + v.visits, 0))}
-            label="Visits of every type"
-          />
-        </dl>
-        <ChartGrid>
+      <Slide n={1}>
+        <section className="flex flex-col gap-4">
+          <Eyebrow>Section 01 · Investment and progress</Eyebrow>
+          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Tile
+              value={integer.format(e.stores_serviced)}
+              label="Stores serviced"
+              note={tiers || undefined}
+            />
+            <Tile value={integer.format(e.service_visits)} label="Service visits" />
+            <Tile
+              value={integer.format(e.captures)}
+              label="Rodent captures"
+              note="stated in the notes"
+            />
+            <Tile
+              value={integer.format(e.visit_types.reduce((t, v) => t + v.visits, 0))}
+              label="Visits of every type"
+            />
+          </dl>
+          <ChartGrid>
+            <BreakdownChart
+              title="Visits by Type"
+              description="Distinct visits by the kind of order."
+              data={e.visit_types.map((v) => ({
+                label: v.label,
+                mentions: v.visits,
+                stores: 0,
+                remediated: 0,
+              }))}
+            />
+            <ChartCard
+              title="Visits by Month"
+              description="A location's completed orders on one date count as one visit."
+              rows={e.months.map((m) => [formatMonth(m.month), integer.format(m.visits)])}
+            >
+              <ChartContainer config={programMonthConfig} className="aspect-auto h-64 w-full">
+                <BarChart data={e.months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="var(--border)" />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={formatMonth}
+                  />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
+                  <ChartTooltip
+                    content={<ChartTooltipContent labelFormatter={(m) => formatMonth(String(m))} />}
+                  />
+                  <Bar dataKey="visits" fill="var(--color-visits)" />
+                </BarChart>
+              </ChartContainer>
+            </ChartCard>
+          </ChartGrid>
+        </section>
+      </Slide>
+
+      <Slide n={2}>
+        <section className="flex flex-col gap-4">
+          <Eyebrow>Section 02 · Portfolio health today</Eyebrow>
+          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Tile
+              value={pct(e.treated ? e.stabilized_now / e.treated : null)}
+              label="Stabilized"
+              note={`${integer.format(e.stabilized_now)} of ${integer.format(e.treated)} treated stores`}
+            />
+            <Tile
+              value={pct(e.treated ? e.active_now / e.treated : null)}
+              label="Active stabilization"
+              note={`${integer.format(e.active_now)} under active management`}
+            />
+            <Tile
+              value={pct(reduction)}
+              label="Risk reduction"
+              note={`Mean risk index ${num(e.risk_start)} → ${num(e.risk_now)}`}
+            />
+            <Tile
+              value={integer.format(e.recurrence)}
+              label="With a recurrence"
+              note="lost Stabilized at least once"
+            />
+          </dl>
+          <ChartGrid>
+            <HealthTable title="Outcomes by State" rows={e.by_state} />
+            <HealthTable title="Outcomes by Tier" rows={e.by_tier} />
+          </ChartGrid>
+        </section>
+      </Slide>
+
+      <Slide n={3}>
+        <section className="flex flex-col gap-4">
+          <Eyebrow>Section 03 · The yield</Eyebrow>
+          <ChartGrid>
+            <TableCard
+              title="RAMP Phase vs. Monitoring Phase"
+              description="Rated orders by their service code: activity concentrates in active intervention."
+            >
+              <DataTable>
+                <thead>
+                  <tr>
+                    <th className="p-3 font-medium">Phase</th>
+                    <th className="p-3 text-right font-medium">Rated orders</th>
+                    <th className="p-3 text-right font-medium">With activity</th>
+                    <th className="p-3 text-right font-medium">Heavy</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {e.phases.map((p) => (
+                    <tr key={p.phase}>
+                      <td className="p-3">{p.phase}</td>
+                      <td className="p-3 text-right tabular-nums">{integer.format(p.rated)}</td>
+                      <td className="p-3 text-right tabular-nums">{pct(p.activity_rate)}</td>
+                      <td className="p-3 text-right tabular-nums">{pct(p.heavy_rate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </TableCard>
+            <TableCard
+              title="Rats and Mice"
+              description="Stores whose findings name only one species, and how they stabilize."
+            >
+              <DataTable>
+                <thead>
+                  <tr>
+                    <th className="p-3 font-medium">Species</th>
+                    <th className="p-3 text-right font-medium">Stores</th>
+                    <th className="p-3 text-right font-medium">Stabilized now</th>
+                    <th className="p-3 text-right font-medium">Median days</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {d.activity.species.map((s) => (
+                    <tr key={s.species}>
+                      <td className="p-3">{s.species}</td>
+                      <td className="p-3 text-right tabular-nums">{integer.format(s.stores)}</td>
+                      <td className="p-3 text-right tabular-nums">
+                        {integer.format(s.stabilized)}
+                      </td>
+                      <td className="p-3 text-right tabular-nums">{num(s.median_days)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </TableCard>
+          </ChartGrid>
+        </section>
+      </Slide>
+
+      <Slide n={4}>
+        <Ceilings c={e.ceilings} />
+      </Slide>
+      <Slide n={5}>
+        <FrontLine f={e.front_line} />
+      </Slide>
+      <Slide n={6}>
+        <Drivers d={e.drivers} />
+      </Slide>
+
+      <Slide n={7}>
+        <section className="flex flex-col gap-4">
+          <Eyebrow>Section 04 · The operating model</Eyebrow>
           <BreakdownChart
-            title="Visits by Type"
-            description="Distinct visits by the kind of order."
-            data={e.visit_types.map((v) => ({
+            title="Risk-Based Monitoring"
+            description="The condition sets the cadence: each treated store, placed by its own record."
+            data={e.cadence.map((v) => ({
               label: v.label,
               mentions: v.visits,
-              stores: 0,
+              stores: v.visits,
               remediated: 0,
             }))}
           />
-          <ChartCard
-            title="Visits by Month"
-            description="A location's completed orders on one date count as one visit."
-            rows={e.months.map((m) => [formatMonth(m.month), integer.format(m.visits)])}
-          >
-            <ChartContainer config={programMonthConfig} className="aspect-auto h-64 w-full">
-              <BarChart data={e.months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="var(--border)" />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tickFormatter={formatMonth}
-                />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
-                <ChartTooltip
-                  content={<ChartTooltipContent labelFormatter={(m) => formatMonth(String(m))} />}
-                />
-                <Bar dataKey="visits" fill="var(--color-visits)" />
-              </BarChart>
-            </ChartContainer>
-          </ChartCard>
-        </ChartGrid>
-      </section>
+        </section>
+      </Slide>
 
-      <section className="flex flex-col gap-4">
-        <Eyebrow>Section 02 · Portfolio health today</Eyebrow>
-        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile
-            value={pct(e.treated ? e.stabilized_now / e.treated : null)}
-            label="Stabilized"
-            note={`${integer.format(e.stabilized_now)} of ${integer.format(e.treated)} treated stores`}
-          />
-          <Tile
-            value={pct(e.treated ? e.active_now / e.treated : null)}
-            label="Active stabilization"
-            note={`${integer.format(e.active_now)} under active management`}
-          />
-          <Tile
-            value={pct(reduction)}
-            label="Risk reduction"
-            note={`Mean risk index ${num(e.risk_start)} → ${num(e.risk_now)}`}
-          />
-          <Tile
-            value={integer.format(e.recurrence)}
-            label="With a recurrence"
-            note="lost Stabilized at least once"
-          />
-        </dl>
-        <ChartGrid>
-          <HealthTable title="Outcomes by State" rows={e.by_state} />
-          <HealthTable title="Outcomes by Tier" rows={e.by_tier} />
-        </ChartGrid>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <Eyebrow>Section 03 · The yield</Eyebrow>
-        <ChartGrid>
-          <TableCard
-            title="RAMP Phase vs. Monitoring Phase"
-            description="Rated orders by their service code: activity concentrates in active intervention."
-          >
-            <DataTable>
-              <thead>
-                <tr>
-                  <th className="p-3 font-medium">Phase</th>
-                  <th className="p-3 text-right font-medium">Rated orders</th>
-                  <th className="p-3 text-right font-medium">With activity</th>
-                  <th className="p-3 text-right font-medium">Heavy</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {e.phases.map((p) => (
-                  <tr key={p.phase}>
-                    <td className="p-3">{p.phase}</td>
-                    <td className="p-3 text-right tabular-nums">{integer.format(p.rated)}</td>
-                    <td className="p-3 text-right tabular-nums">{pct(p.activity_rate)}</td>
-                    <td className="p-3 text-right tabular-nums">{pct(p.heavy_rate)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </TableCard>
-          <TableCard
-            title="Rats and Mice"
-            description="Stores whose findings name only one species, and how they stabilize."
-          >
-            <DataTable>
-              <thead>
-                <tr>
-                  <th className="p-3 font-medium">Species</th>
-                  <th className="p-3 text-right font-medium">Stores</th>
-                  <th className="p-3 text-right font-medium">Stabilized now</th>
-                  <th className="p-3 text-right font-medium">Median days</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {d.activity.species.map((s) => (
-                  <tr key={s.species}>
-                    <td className="p-3">{s.species}</td>
-                    <td className="p-3 text-right tabular-nums">{integer.format(s.stores)}</td>
-                    <td className="p-3 text-right tabular-nums">{integer.format(s.stabilized)}</td>
-                    <td className="p-3 text-right tabular-nums">{num(s.median_days)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </TableCard>
-        </ChartGrid>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <Eyebrow>Section 04 · The operating model</Eyebrow>
-        <BreakdownChart
-          title="Risk-Based Monitoring"
-          description="The condition sets the cadence: each treated store, placed by its own record."
-          data={e.cadence.map((v) => ({
-            label: v.label,
-            mentions: v.visits,
-            stores: v.visits,
-            remediated: 0,
-          }))}
+      <Slide n={8}>
+        <SixMonth s={e.six_month} />
+      </Slide>
+      <Slide n={9}>
+        <ConditionOwnership c={e.conditions} />
+      </Slide>
+      <Slide n={10}>
+        <AssessmentCoverage
+          companyId={scope.companyId}
+          billToId={scope.billToId}
+          state={scope.state}
         />
-      </section>
-    </div>
+      </Slide>
+    </PresentFrame>
   );
 }
 
@@ -1233,7 +1281,7 @@ export function TrackerTabView({ scope }: { scope: Scope }) {
   return <WithTabs scope={scope} render={(d) => <Tracker rows={d.tracker} />} />;
 }
 export function ExecutiveTabView({ scope }: { scope: Scope }) {
-  return <WithTabs scope={scope} render={(d) => <Executive d={d} />} />;
+  return <WithTabs scope={scope} render={(d) => <Executive d={d} scope={scope} />} />;
 }
 export function StoreScorecardTabView({ scope }: { scope: Scope }) {
   return <WithProgram scope={scope} render={(d) => <StoreScorecard d={d} />} />;
