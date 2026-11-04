@@ -155,6 +155,57 @@ class PhaseActivity(BaseModel):
     heavy_rate: float | None
 
 
+class CeilingReview(BaseModel):
+    stores_assessed: int
+    drop_ceilings: int  # assessed stores with a drop ceiling at the latest assessment
+    zone_inspected: int
+    zone_rodent_rate: float | None
+    rodent_zone_stores: int
+    activity_visit_share: float | None  # of visits with activity, those naming a ceiling
+
+
+class FrontLineReview(BaseModel):
+    dml_inspected: int
+    dml_rodent_rate: float | None
+    dml_visit_share: float | None
+    front_inspected: int
+    front_rodent_rate: float | None
+    front_visit_share: float | None
+
+
+class RecurrenceDrivers(BaseModel):
+    active: int  # treated stores not stabilized; the shares below are of these
+    structural: float | None
+    operational: float | None
+    environmental: float | None
+    client_reported: int  # stores flagged by a client-reported finding
+
+
+class SixMonthReview(BaseModel):
+    stores: int  # with 6+ months since their first RAMP order
+    stabilized: int
+    activity_after: int
+    gaps_with_activity: int
+    activity_stores: list[StoreRef]
+
+
+class ConditionRow(StoreRef):
+    area: str | None
+    category: str | None
+    severity: str | None
+    owner: str
+    opened: date | None
+
+
+class ConditionReview(BaseModel):
+    found: int
+    assigned: int
+    open: int
+    resolved: int
+    owners: list[VisitTypeCount]
+    high_open: list[ConditionRow]
+
+
 class ExecutiveTab(BaseModel):
     inception: date | None
     through: date | None
@@ -173,6 +224,11 @@ class ExecutiveTab(BaseModel):
     by_state: list[HealthGroup]
     by_tier: list[HealthGroup]
     phases: list[PhaseActivity]
+    ceilings: CeilingReview
+    front_line: FrontLineReview
+    drivers: RecurrenceDrivers
+    six_month: SixMonthReview
+    conditions: ConditionReview
     cadence: list[VisitTypeCount]  # treated stores by the monitoring their record calls for
 
 

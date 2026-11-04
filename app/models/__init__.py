@@ -1,4 +1,5 @@
 from app.models.area_mapping import AreaType, ZoneLabel
+from app.models.client_finding import ClientFinding
 from app.models.condition import Condition, ConditionInspection
 from app.models.contact import Contact, ContactLink, ContactRole
 from app.models.customer import AssessmentTarget, BillTo, Company, Location
@@ -54,6 +55,7 @@ __all__ = [
     "LoginThrottle",
     "BillTo",
     "AssessmentTarget",
+    "ClientFinding",
     "Company",
     "CompanyMembership",
     "Condition",

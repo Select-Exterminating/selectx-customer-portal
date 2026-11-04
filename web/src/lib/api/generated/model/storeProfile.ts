@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ActivityGrid } from './activityGrid';
+import type { ClientFindingRead } from './clientFindingRead';
 import type { ProfileAssessment } from './profileAssessment';
 import type { ProfileFinding } from './profileFinding';
 import type { ProfileJourney } from './profileJourney';
@@ -30,6 +31,7 @@ export interface StoreProfile {
   stage: string;
   attention: string;
   flags: WatchFlag[];
+  client_findings: ClientFindingRead[];
   team_director: string | null;
   executive_team_director: string | null;
   numbers: ProfileNumbers;

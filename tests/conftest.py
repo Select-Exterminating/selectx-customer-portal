@@ -40,7 +40,7 @@ os.environ["INVOICE_WEBHOOK_WAIT_MINUTES"] = "0"
 import json  # noqa: E402
 import re  # noqa: E402
 import uuid  # noqa: E402
-from datetime import UTC, datetime  # noqa: E402
+from datetime import UTC, date, datetime  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 import pytest  # noqa: E402
@@ -57,6 +57,7 @@ from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
     AreaType,
     BillTo,
+    ClientFinding,
     Company,
     CompanyMembership,
     ConnectionStatus,
@@ -111,6 +112,7 @@ def _database():
 
 _CLEANED_TABLES = {
     "assessment_targets",
+    "client_findings",
     "contact_links",
     "contacts",
     "location_areas",
@@ -682,6 +684,7 @@ class World:
     document_a: uuid.UUID
     file_a: uuid.UUID
     risk_inspection_a: uuid.UUID
+    client_finding_a: uuid.UUID
     area_type_a: uuid.UUID
     # A draft with one selected note (so it can be drafted), and a final one with a stored PDF.
     report_a: uuid.UUID
@@ -916,6 +919,17 @@ def world(storage) -> World:
             parsed_at=datetime.now(UTC),
         )
         db.add(risk_inspection_a)
+        # Closed, so it flags nothing in tests of Store Watch.
+        client_finding_a = ClientFinding(
+            operator_id=op_a.id,
+            location_id=location_a.id,
+            logged_on=date(2026, 1, 5),
+            source="Store team",
+            finding="Droppings in the basement",
+            severity="medium",
+            status="closed",
+        )
+        db.add(client_finding_a)
         db.commit()
 
         from app.models import ReportStatus
@@ -996,6 +1010,7 @@ def world(storage) -> World:
             document_a=document_a.id,
             file_a=file_a.id,
             risk_inspection_a=risk_inspection_a.id,
+            client_finding_a=client_finding_a.id,
             area_type_a=area_type_a.id,
             report_a=report_a.id,
             invoice_a=invoice_a.id,

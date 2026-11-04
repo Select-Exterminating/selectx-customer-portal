@@ -16,13 +16,21 @@ import re
 import statistics
 import uuid
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import BillTo, InspectionFinding, InspectionFindingItem, Location, ServiceOrder
+from app.models import (
+    BillTo,
+    ClientFinding,
+    InspectionFinding,
+    InspectionFindingItem,
+    Location,
+    ServiceOrder,
+)
 from app.schemas.program_dashboard import (
     CurvePoint,
     LabelCount,
@@ -33,7 +41,7 @@ from app.schemas.program_dashboard import (
     StoreWatchRow,
     WatchFlag,
 )
-from app.services import area_mapping
+from app.services import area_mapping, client_findings
 from app.services.dashboard import store_name, store_number
 
 ACTIVITY_SCORE = {"none": 0, "low": 1, "moderate": 2, "heavy": 3}
@@ -54,6 +62,7 @@ STABILIZED_DAYS = 28
 STABILIZED_VISITS = 2
 ATTENTION = ["Escalated", "Watch", "Stable", "Not Yet Serviced"]
 FLAG_LABELS = {
+    "client": ("Client-Reported Finding", "Client Finding"),
     "regress": ("Recurrence After Stabilization", "Recurrence"),
     "active": ("Active at Last Visit", "Active Now"),
     "repeat": ("Repeat Activity in Same Zone", "Repeat Zone"),
@@ -63,6 +72,8 @@ FLAG_LABELS = {
     "structural": ("Open Structural Backlog", "Structural"),
     "sanitation": ("Recurring Sanitation Concerns", "Sanitation"),
 }
+# An open client-reported finding flags its store for this long after it's logged.
+CLIENT_FINDING_DAYS = 60
 ZONE_FLAGS = {"active", "repeat"}  # flags whose detail names zones
 TIME_TO_STABILIZED_BUCKETS = [
     (0, 35, "Within 5 Weeks"),
@@ -303,7 +314,11 @@ def risk_index_at(visits: list[Visit], end: date) -> int | None:
 
 
 def store_metrics(
-    location_id: uuid.UUID, visits: list[Visit], tier: str | None, as_of: date
+    location_id: uuid.UUID,
+    visits: list[Visit],
+    tier: str | None,
+    as_of: date,
+    client_findings: Sequence[ClientFinding] = (),
 ) -> StoreMetrics:
     m = StoreMetrics(location_id=location_id, visits=visits, tier=tier)
     services = [v for v in visits if v.service]
@@ -335,14 +350,19 @@ def store_metrics(
     if rated:
         m.risk_index = round(sum(risk_points(visits, rated[-1].day).values()))
     m.risk_band = band_of(m.risk_index)
-    _watch(m, rated, services, recurrences, as_of)
+    _watch(m, rated, services, recurrences, as_of, client_findings)
     return m
 
 
 def _watch(
-    m: StoreMetrics, rated: list[Visit], services: list[Visit], recurrences: list[date], as_of
+    m: StoreMetrics,
+    rated: list[Visit],
+    services: list[Visit],
+    recurrences: list[date],
+    as_of: date,
+    client_findings: Sequence[ClientFinding] = (),
 ) -> None:
-    """Store Watch flags and attention level (watch.js, without client-reported findings)."""
+    """Store Watch flags and attention level (watch.js)."""
 
     def ago(d: date) -> int:
         return (as_of - d).days
@@ -353,8 +373,13 @@ def _watch(
     def fmt(d: date) -> str:
         return f"{d:%b} {d.day}, {d.year}"
 
+    reported = [
+        f for f in client_findings if f.status == "open" and ago(f.logged_on) <= CLIENT_FINDING_DAYS
+    ]
+    if reported:
+        add("client", 4, "; ".join(f"{f.source}: {f.finding}" for f in reported))
     if not rated:
-        m.attention = "Not Yet Serviced"
+        m.attention = "Escalated" if reported else "Not Yet Serviced"
         return
     after = (
         [v for v in rated if v.day > m.first_stabilized and v.activity > 0]
@@ -422,7 +447,7 @@ def _watch(
     score = sum(w for _, w, _ in m.flags)
     codes = {c for c, _, _ in m.flags}
     heavy_now = any(c == "active" and w >= 3 for c, w, _ in m.flags)
-    if score >= 7 or ("regress" in codes and (heavy_now or "repeat" in codes)):
+    if "client" in codes or score >= 7 or ("regress" in codes and (heavy_now or "repeat" in codes)):
         m.attention = "Escalated"
     elif score >= 2:
         m.attention = "Watch"
@@ -611,8 +636,12 @@ def compute(db: Session, locations: list[Location], today: date) -> tuple[date, 
     visits = load_visits(db, ids)
     tiers = load_tiers(db, ids)
     as_of = as_of_date(visits, today)
+    reported = client_findings.load(db, ids)
     stores = [
-        store_metrics(loc.id, visits.get(loc.id, []), tiers.get(loc.id), as_of) for loc in locations
+        store_metrics(
+            loc.id, visits.get(loc.id, []), tiers.get(loc.id), as_of, reported.get(loc.id, ())
+        )
+        for loc in locations
     ]
     return as_of, stores
 
@@ -720,5 +749,6 @@ def program_dashboard(
         ),
         curve=[CurvePoint(**c) for c in curve(stores)],
         monthly=[MonthTrend(**m) for m in monthly(stores)],
-        stores=[row(s) for s in sorted(stores, key=urgency) if s.visits],
+        # A flag on a store with no visits is a client-reported finding, so it still shows.
+        stores=[row(s) for s in sorted(stores, key=urgency) if s.visits or s.flags],
     )

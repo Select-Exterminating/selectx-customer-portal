@@ -1,6 +1,7 @@
 export * from './area-mapping/area-mapping';
 export * from './auth/auth';
 export * from './bill-tos/bill-tos';
+export * from './client-findings/client-findings';
 export * from './companies/companies';
 export * from './contacts/contacts';
 export * from './dashboard/dashboard';

@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useContext, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceArea, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 
+import { ClientFindingDialog } from "@/components/client-finding-dialog";
 import { DashboardLink, DashboardLinksContext, useStoreParam } from "@/components/dashboard-link";
 import { DataTable, DataTableFrame } from "@/components/data-table";
 import {
@@ -325,6 +334,60 @@ function TrendTooltip({
   );
 }
 
+const findingDay = (f: { reported_on: string | null; logged_on: string }) =>
+  f.reported_on ?? f.logged_on;
+
+function ClientFindings({ p, operatorId }: { p: StoreProfile; operatorId: string | undefined }) {
+  const { can } = usePermissions();
+  const canWrite = operatorId !== undefined && can("bill_tos:write", operatorId);
+  if (p.client_findings.length === 0 && !canWrite) return null;
+  return (
+    <Section
+      title="Client-Reported Findings"
+      note="Findings reported to Select by the customer's food safety, EcoLab, or store teams, logged beside Select's own reports."
+    >
+      <div className="flex flex-col gap-3">
+        {p.client_findings.length === 0 && <Empty>None logged.</Empty>}
+        {p.client_findings.map((f) => (
+          <article key={f.id} className="flex flex-col gap-1 border-l-4 border-destructive pl-3">
+            <div className="flex flex-wrap items-center gap-2 text-[13px]">
+              <b>{fullDay(findingDay(f))}</b>
+              <Badge variant={f.status === "open" ? "destructive" : "outline"}>
+                {f.status === "open" ? "Open" : "Closed"}
+              </Badge>
+              <Badge variant={f.severity === "high" ? "destructive" : "pending"}>
+                {f.severity === "high" ? "High" : f.severity === "medium" ? "Medium" : "Low"}
+              </Badge>
+              {canWrite && operatorId && (
+                <span className="ml-auto">
+                  <ClientFindingDialog
+                    locationId={p.location_id}
+                    operatorId={operatorId}
+                    finding={f}
+                  />
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {[f.source, f.zone_name].filter(Boolean).join(" · ")}
+              {f.reported_on && ` · logged ${fullDay(f.logged_on)}`}
+            </p>
+            <p className="text-[13px]">
+              <b>{f.finding}</b>
+              {f.select_response && ` ${f.select_response}`}
+            </p>
+          </article>
+        ))}
+        {canWrite && operatorId && (
+          <div>
+            <ClientFindingDialog locationId={p.location_id} operatorId={operatorId} />
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
 function Trend({ p }: { p: StoreProfile }) {
   const data = p.trend.map((t) => ({ ...t, time: new Date(`${t.day}T00:00:00`).getTime() }));
   const top = Math.max(60, ...p.trend.map((t) => t.index + 5));
@@ -365,6 +428,14 @@ function Trend({ p }: { p: StoreProfile }) {
               />
               <YAxis domain={[0, top]} tickLine={false} axisLine={false} width={30} />
               <ChartTooltip content={<TrendTooltip />} />
+              {p.client_findings.map((f) => (
+                <ReferenceLine
+                  key={f.id}
+                  x={new Date(`${findingDay(f)}T00:00:00`).getTime()}
+                  stroke="var(--destructive)"
+                  strokeDasharray="4 3"
+                />
+              ))}
               <Line
                 dataKey="index"
                 stroke="var(--color-index)"
@@ -385,6 +456,11 @@ function Trend({ p }: { p: StoreProfile }) {
             </LineChart>
           </ChartContainer>
           <ActivityLegend />
+          {p.client_findings.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Dashed lines mark client-reported findings.
+            </p>
+          )}
         </>
       )}
     </ChartCard>
@@ -415,6 +491,9 @@ function shortMonth(month: string, multiYear: boolean) {
 function ActivityGrid({ p }: { p: StoreProfile }) {
   const { months, rated, zones } = p.activity_grid;
   const multiYear = months.length > 0 && months[0].slice(0, 4) !== months.at(-1)?.slice(0, 4);
+  const reported = new Set(
+    p.client_findings.map((f) => `${f.zone_name}|${findingDay(f).slice(0, 7)}`),
+  );
   return (
     <Section
       title="Rodent Activity by Zone and Month"
@@ -456,9 +535,17 @@ function ActivityGrid({ p }: { p: StoreProfile }) {
                         key={months[i]}
                         title={`${z.zone} · ${months[i]} · ${l ? level(LEVELS[l]) : "None"}`}
                         className="h-[22px] min-w-[22px] rounded bg-accent text-center"
-                        style={l ? { background: ACTIVITY_COLOR[l] } : undefined}
+                        style={{
+                          ...(l ? { background: ACTIVITY_COLOR[l] } : {}),
+                          ...(reported.has(`${z.zone}|${months[i]}`)
+                            ? { boxShadow: "inset 0 0 0 2px var(--destructive)" }
+                            : {}),
+                        }}
                       >
-                        <span className="sr-only">{l ? level(LEVELS[l]) : "None"}</span>
+                        <span className="sr-only">
+                          {l ? level(LEVELS[l]) : "None"}
+                          {reported.has(`${z.zone}|${months[i]}`) && ", client-reported finding"}
+                        </span>
                       </td>
                     ))}
                     <td className="text-center font-bold tabular-nums">{z.total}</td>
@@ -479,6 +566,11 @@ function ActivityGrid({ p }: { p: StoreProfile }) {
             </table>
           </div>
           <ActivityLegend levels={["low", "moderate", "heavy"]} />
+          {p.client_findings.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              An outlined cell marks a client-reported finding.
+            </p>
+          )}
         </>
       )}
     </Section>
@@ -880,6 +972,7 @@ function Body({ p, operatorId }: { p: StoreProfile; operatorId: string | undefin
         </p>
       )}
       {notInRamp && assessmentHistory}
+      {neverServiced && <ClientFindings p={p} operatorId={operatorId} />}
       {!neverServiced && (
         <>
           <Why p={p} />
@@ -897,6 +990,7 @@ function Body({ p, operatorId }: { p: StoreProfile; operatorId: string | undefin
               value={n.days_since_service === null ? "—" : num(n.days_since_service)}
             />
           </dl>
+          <ClientFindings p={p} operatorId={operatorId} />
           <Journey p={p} />
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <Trend p={p} />

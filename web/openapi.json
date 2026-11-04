@@ -6317,6 +6317,124 @@
         }
       }
     },
+    "/v1/locations/{location_id}/client-findings": {
+      "post": {
+        "tags": [
+          "client-findings"
+        ],
+        "summary": "Log Client Finding",
+        "description": "Log what the customer's own people found at this store. Reading is on the store profile.",
+        "operationId": "client-findings-log_client_finding",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Location Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientFindingWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientFindingRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/client-findings/{finding_id}": {
+      "put": {
+        "tags": [
+          "client-findings"
+        ],
+        "summary": "Update Client Finding",
+        "description": "Edit a finding, or close it. Findings are never deleted.",
+        "operationId": "client-findings-update_client_finding",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "finding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Finding Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientFindingWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientFindingRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/roles": {
       "get": {
         "tags": [
@@ -8377,6 +8495,222 @@
         "title": "Breakdown",
         "description": "How often something was logged, with the stores it appeared at."
       },
+      "CeilingReview": {
+        "properties": {
+          "stores_assessed": {
+            "type": "integer",
+            "title": "Stores Assessed"
+          },
+          "drop_ceilings": {
+            "type": "integer",
+            "title": "Drop Ceilings"
+          },
+          "zone_inspected": {
+            "type": "integer",
+            "title": "Zone Inspected"
+          },
+          "zone_rodent_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Rodent Rate"
+          },
+          "rodent_zone_stores": {
+            "type": "integer",
+            "title": "Rodent Zone Stores"
+          },
+          "activity_visit_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Visit Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stores_assessed",
+          "drop_ceilings",
+          "zone_inspected",
+          "zone_rodent_rate",
+          "rodent_zone_stores",
+          "activity_visit_share"
+        ],
+        "title": "CeilingReview"
+      },
+      "ClientFindingRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reported_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported On"
+          },
+          "logged_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Logged On"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "finding": {
+            "type": "string",
+            "title": "Finding"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          },
+          "zone_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Name"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "select_response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reported_on",
+          "logged_on",
+          "source",
+          "finding",
+          "zone",
+          "zone_name",
+          "severity",
+          "status",
+          "select_response"
+        ],
+        "title": "ClientFindingRead"
+      },
+      "ClientFindingWrite": {
+        "properties": {
+          "reported_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported On"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "finding": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Finding"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Zone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "title": "Status",
+            "default": "open"
+          },
+          "select_response": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "finding",
+          "severity"
+        ],
+        "title": "ClientFindingWrite"
+      },
       "CohortPoint": {
         "properties": {
           "month": {
@@ -9109,6 +9443,166 @@
         ],
         "title": "ConditionRead"
       },
+      "ConditionReview": {
+        "properties": {
+          "found": {
+            "type": "integer",
+            "title": "Found"
+          },
+          "assigned": {
+            "type": "integer",
+            "title": "Assigned"
+          },
+          "open": {
+            "type": "integer",
+            "title": "Open"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "owners": {
+            "items": {
+              "$ref": "#/components/schemas/VisitTypeCount"
+            },
+            "type": "array",
+            "title": "Owners"
+          },
+          "high_open": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionRow"
+            },
+            "type": "array",
+            "title": "High Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "found",
+          "assigned",
+          "open",
+          "resolved",
+          "owners",
+          "high_open"
+        ],
+        "title": "ConditionReview"
+      },
+      "ConditionRow": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "owner": {
+            "type": "string",
+            "title": "Owner"
+          },
+          "opened": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state",
+          "area",
+          "category",
+          "severity",
+          "owner",
+          "opened"
+        ],
+        "title": "ConditionRow"
+      },
       "ConnectionStatus": {
         "type": "string",
         "enum": [
@@ -9635,6 +10129,21 @@
             "type": "array",
             "title": "Phases"
           },
+          "ceilings": {
+            "$ref": "#/components/schemas/CeilingReview"
+          },
+          "front_line": {
+            "$ref": "#/components/schemas/FrontLineReview"
+          },
+          "drivers": {
+            "$ref": "#/components/schemas/RecurrenceDrivers"
+          },
+          "six_month": {
+            "$ref": "#/components/schemas/SixMonthReview"
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/ConditionReview"
+          },
           "cadence": {
             "items": {
               "$ref": "#/components/schemas/VisitTypeCount"
@@ -9662,9 +10171,80 @@
           "by_state",
           "by_tier",
           "phases",
+          "ceilings",
+          "front_line",
+          "drivers",
+          "six_month",
+          "conditions",
           "cadence"
         ],
         "title": "ExecutiveTab"
+      },
+      "FrontLineReview": {
+        "properties": {
+          "dml_inspected": {
+            "type": "integer",
+            "title": "Dml Inspected"
+          },
+          "dml_rodent_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dml Rodent Rate"
+          },
+          "dml_visit_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dml Visit Share"
+          },
+          "front_inspected": {
+            "type": "integer",
+            "title": "Front Inspected"
+          },
+          "front_rodent_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Front Rodent Rate"
+          },
+          "front_visit_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Front Visit Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dml_inspected",
+          "dml_rodent_rate",
+          "dml_visit_share",
+          "front_inspected",
+          "front_rodent_rate",
+          "front_visit_share"
+        ],
+        "title": "FrontLineReview"
       },
       "GeneratedReport": {
         "properties": {
@@ -15383,6 +15963,60 @@
         ],
         "title": "RecentActivityStore"
       },
+      "RecurrenceDrivers": {
+        "properties": {
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "structural": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structural"
+          },
+          "operational": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operational"
+          },
+          "environmental": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environmental"
+          },
+          "client_reported": {
+            "type": "integer",
+            "title": "Client Reported"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active",
+          "structural",
+          "operational",
+          "environmental",
+          "client_reported"
+        ],
+        "title": "RecurrenceDrivers"
+      },
       "RecurringSanitationStore": {
         "properties": {
           "location_id": {
@@ -18420,6 +19054,42 @@
         ],
         "title": "SiteCondition"
       },
+      "SixMonthReview": {
+        "properties": {
+          "stores": {
+            "type": "integer",
+            "title": "Stores"
+          },
+          "stabilized": {
+            "type": "integer",
+            "title": "Stabilized"
+          },
+          "activity_after": {
+            "type": "integer",
+            "title": "Activity After"
+          },
+          "gaps_with_activity": {
+            "type": "integer",
+            "title": "Gaps With Activity"
+          },
+          "activity_stores": {
+            "items": {
+              "$ref": "#/components/schemas/StoreRef"
+            },
+            "type": "array",
+            "title": "Activity Stores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stores",
+          "stabilized",
+          "activity_after",
+          "gaps_with_activity",
+          "activity_stores"
+        ],
+        "title": "SixMonthReview"
+      },
       "SpeciesOutcome": {
         "properties": {
           "species": {
@@ -18686,6 +19356,13 @@
             "type": "array",
             "title": "Flags"
           },
+          "client_findings": {
+            "items": {
+              "$ref": "#/components/schemas/ClientFindingRead"
+            },
+            "type": "array",
+            "title": "Client Findings"
+          },
           "team_director": {
             "anyOf": [
               {
@@ -18783,6 +19460,7 @@
           "stage",
           "attention",
           "flags",
+          "client_findings",
           "team_director",
           "executive_team_director",
           "numbers",
@@ -18798,6 +19476,68 @@
         ],
         "title": "StoreProfile",
         "description": "Everything one store's flyover shows, in the RAMP portal's layout."
+      },
+      "StoreRef": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "city",
+          "state"
+        ],
+        "title": "StoreRef"
       },
       "StoreRow": {
         "properties": {

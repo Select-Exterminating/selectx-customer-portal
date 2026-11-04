@@ -203,7 +203,12 @@ function Spark({ scores }: { scores: number[] }) {
 }
 
 const WATCH_FILTERS = [
-  ["Escalated", "Escalated", "Recurrence after stabilization or repeat zones", "destructive"],
+  [
+    "Escalated",
+    "Escalated",
+    "Recurrence after stabilization, repeat zones, or a client-reported finding",
+    "destructive",
+  ],
   [
     "Watch",
     "Watch",
@@ -212,6 +217,12 @@ const WATCH_FILTERS = [
   ],
   ["Stable", "Holding baseline", "No flags in recent reports", "success"],
   ["regress", "Recurrences", "Stabilized, then activity again in the last 45 days", "destructive"],
+  [
+    "client",
+    "Client-reported findings",
+    "Food safety, EcoLab or store-team findings open and logged in the last 60 days",
+    "destructive",
+  ],
 ] as const;
 const WATCH_TILE = {
   destructive: {
@@ -225,6 +236,10 @@ const WATCH_TILE = {
 
 /** Which stores need attention now, from each store's own reports. */
 const FLAG_RULES = [
+  [
+    "Client-reported finding",
+    "A finding the customer's own people reported, open and logged in the last 60 days. Always escalates.",
+  ],
   [
     "Recurrence after stabilization",
     "Reached Stabilized, then activity was found again within the last 45 days.",
@@ -274,9 +289,7 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
     const q = query.trim().toLowerCase();
     return d.stores.filter(
       (s) =>
-        (!filter ||
-          s.attention === filter ||
-          (filter === "regress" && s.flags.some((f) => f.code === "regress"))) &&
+        (!filter || s.attention === filter || s.flags.some((f) => f.code === filter)) &&
         (!flag || s.flags.some((f) => f.code === flag)) &&
         (!tier || s.tier === tier) &&
         (!q || [s.store_number, s.name, s.city].some((v) => (v ?? "").toLowerCase().includes(q))),
@@ -296,9 +309,14 @@ function StoreWatch({ d }: { d: ProgramDashboard }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {WATCH_FILTERS.map(([key, label, note, tone]) => {
-            const value = key === "regress" ? d.portfolio.recurrences : (counts[key] ?? 0);
+            const value =
+              key === "regress"
+                ? d.portfolio.recurrences
+                : key === "client"
+                  ? d.stores.filter((s) => s.flags.some((f) => f.code === "client")).length
+                  : (counts[key] ?? 0);
             const active = filter === key;
             return (
               <button
@@ -805,7 +823,7 @@ function PortfolioToday({ d }: { d: ProgramDashboard }) {
   );
 }
 
-function AssessmentCoverage({
+export function AssessmentCoverage({
   companyId,
   billToId,
   state,

@@ -37,7 +37,7 @@ from app.schemas.store_profile import (
     TrendPoint,
     ZoneMonths,
 )
-from app.services import area_mapping
+from app.services import area_mapping, client_findings
 from app.services.dashboard import store_name, store_number
 from app.services.program_metrics import (
     ACTIVITY_LEVEL,
@@ -285,7 +285,8 @@ def store_profile(
     as_of = _as_of(db, company, today)
     visits = load_visits(db, [location.id]).get(location.id, [])
     tier = load_tiers(db, [location.id]).get(location.id)
-    m = store_metrics(location.id, visits, tier, as_of)
+    reported = client_findings.load(db, [location.id]).get(location.id, [])
+    m = store_metrics(location.id, visits, tier, as_of, reported)
     first_monitoring = _order_dates(db, [location.id])[0].get(location.id)
     zone_names = {z.value: n for z, n in area_mapping.zone_names(db, company.operator_id).items()}
     rated = [v for v in visits if v.activity is not None]
@@ -326,6 +327,7 @@ def store_profile(
         stage=_stage(m, first_monitoring),
         attention=m.attention,
         flags=watch_flags(m, zone_names),
+        client_findings=[client_findings.read(f, zone_names) for f in reported],
         team_director=directors.get(ContactRole.team_director),
         executive_team_director=directors.get(ContactRole.executive_team_director),
         numbers=ProfileNumbers(
