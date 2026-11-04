@@ -37,6 +37,28 @@ class Company(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class AssessmentTarget(Base):
+    """How many of a company's restaurants in a state its risk assessment program covers. The
+    program can cover stores we don't serve yet, so our locations can't say."""
+
+    __tablename__ = "assessment_targets"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["company_id", "operator_id"],
+            ["companies.id", "companies.operator_id"],
+            name="fk_assessment_targets_company_operator",
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("company_id", "state", name="uq_assessment_targets_company_state"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    operator_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    company_id: Mapped[uuid.UUID] = mapped_column()
+    state: Mapped[str] = mapped_column(String(2))
+    total: Mapped[int] = mapped_column()
+
+
 class BillTo(Base):
     """A PestPac bill-to onboarded to the portal. Onboarding happens at this level; it may
     cover a single location, a region, or a whole company (see `description`)."""

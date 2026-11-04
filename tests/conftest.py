@@ -110,6 +110,7 @@ def _database():
 
 
 _CLEANED_TABLES = {
+    "assessment_targets",
     "contact_links",
     "contacts",
     "location_areas",

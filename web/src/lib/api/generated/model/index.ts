@@ -13,6 +13,8 @@ export * from './areaTypeUpdate';
 export * from './assessedStore';
 export * from './assessmentFinding';
 export * from './assessmentFindingPage';
+export * from './assessmentTargetRow';
+export * from './assessmentTargets';
 export * from './assessmentZone';
 export * from './assessmentZoneScore';
 export * from './billToCreate';

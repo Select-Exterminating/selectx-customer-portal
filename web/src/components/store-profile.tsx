@@ -854,54 +854,77 @@ function Body({ p, operatorId }: { p: StoreProfile; operatorId: string | undefin
   const { can } = usePermissions();
   const canOpenReports = operatorId !== undefined && can("reports:read", operatorId);
   const n = p.numbers;
+  // A restaurant Select has assessed outside the program leads with its assessments.
+  const notInRamp = !p.tier && p.assessments.length > 0;
+  const neverServiced = notInRamp && p.visits.length === 0;
+  const assessmentHistory = p.assessments.length > 0 && (
+    <Section
+      title="Risk Assessment History"
+      note="Risk assessments from GoCanvas: every zone scored 1 (low) to 5 (critical) for sanitation and structural integrity, with rodent and pest evidence."
+    >
+      {p.assessments.map((a, i) => (
+        <Assessment key={a.inspection_id} a={a} open={i === 0} />
+      ))}
+    </Section>
+  );
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-10 sm:px-7">
-      <Why p={p} />
-      <dl className="grid grid-cols-2 gap-2.5 lg:grid-cols-6">
-        <StatTile label="Services performed" value={num(n.services)} />
-        <StatTile label="Documented captures" value={num(n.captures)} />
-        <StatTile label="Visits with activity" value={pct(n.activity_rate)} />
-        <StatTile
-          label="Activity visits, last 30 days"
-          value={n.rated_30d ? `${n.activity_30d} of ${n.rated_30d}` : "—"}
-        />
-        <StatTile label="Open structural items" value={num(n.structural_open)} />
-        <StatTile
-          label="Days since last service"
-          value={n.days_since_service === null ? "—" : num(n.days_since_service)}
-        />
-      </dl>
-      <Journey p={p} />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        <Trend p={p} />
-        <ActivityGrid p={p} />
-      </div>
-      <RecentServices visits={p.visits} canOpen={canOpenReports} />
-      {p.assessments.length > 0 && (
-        <Section
-          title="Risk Assessment History"
-          note="Risk assessments from GoCanvas: every zone scored 1 (low) to 5 (critical) for sanitation and structural integrity, with rodent and pest evidence."
-        >
-          {p.assessments.map((a, i) => (
-            <Assessment key={a.inspection_id} a={a} open={i === 0} />
-          ))}
-        </Section>
+      {notInRamp && (
+        <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
+          <Badge variant="outline" className="mr-2">
+            Assessed, Not in RAMP
+          </Badge>
+          {neverServiced
+            ? "Select has assessed this restaurant but has no service visits on record."
+            : "Select has assessed this restaurant, and it has no RAMP order on record."}
+        </p>
       )}
-      <Eyebrow className="mt-2 text-muted-foreground">Full store history</Eyebrow>
-      <ProgramRecord p={p} />
-      <Timeline visits={p.visits} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section
-          title="Open Structural Vulnerabilities"
-          note="The latest report of each distinct vulnerability still open."
-        >
-          <FindingTable status findings={p.open_structural} empty="None open." />
-        </Section>
-        <Section title="Recent Sanitation and Pest Findings" note="The most recent 12.">
-          <FindingTable status={false} findings={p.recent_concerns} empty="None logged." />
-        </Section>
-      </div>
-      <ServiceLog visits={p.visits} canOpen={canOpenReports} />
+      {notInRamp && assessmentHistory}
+      {!neverServiced && (
+        <>
+          <Why p={p} />
+          <dl className="grid grid-cols-2 gap-2.5 lg:grid-cols-6">
+            <StatTile label="Services performed" value={num(n.services)} />
+            <StatTile label="Documented captures" value={num(n.captures)} />
+            <StatTile label="Visits with activity" value={pct(n.activity_rate)} />
+            <StatTile
+              label="Activity visits, last 30 days"
+              value={n.rated_30d ? `${n.activity_30d} of ${n.rated_30d}` : "—"}
+            />
+            <StatTile label="Open structural items" value={num(n.structural_open)} />
+            <StatTile
+              label="Days since last service"
+              value={n.days_since_service === null ? "—" : num(n.days_since_service)}
+            />
+          </dl>
+          <Journey p={p} />
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+            <Trend p={p} />
+            <ActivityGrid p={p} />
+          </div>
+          <RecentServices visits={p.visits} canOpen={canOpenReports} />
+        </>
+      )}
+      {!notInRamp && assessmentHistory}
+      {!neverServiced && (
+        <>
+          <Eyebrow className="mt-2 text-muted-foreground">Full store history</Eyebrow>
+          <ProgramRecord p={p} />
+          <Timeline visits={p.visits} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Section
+              title="Open Structural Vulnerabilities"
+              note="The latest report of each distinct vulnerability still open."
+            >
+              <FindingTable status findings={p.open_structural} empty="None open." />
+            </Section>
+            <Section title="Recent Sanitation and Pest Findings" note="The most recent 12.">
+              <FindingTable status={false} findings={p.recent_concerns} empty="None logged." />
+            </Section>
+          </div>
+          <ServiceLog visits={p.visits} canOpen={canOpenReports} />
+        </>
+      )}
       {canOpenReports && <Reports p={p} />}
     </div>
   );

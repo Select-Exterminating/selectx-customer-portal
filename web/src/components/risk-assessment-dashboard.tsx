@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 
 import { DataTable, DataTableFrame } from "@/components/data-table";
-import { StoreLink } from "@/components/dashboard-link";
+import { StoreLink, useStoreParam } from "@/components/dashboard-link";
+import { RiskMap } from "@/components/risk-map";
 import { StatTile } from "@/components/stat-tile";
 import { BAND_COLOR, day, Eyebrow, pct, STATEMENT_BAND } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -28,6 +29,26 @@ const CLASS_COLOR: Record<string, string> = {
   Low: BAND_COLOR.Controlled,
 };
 const FINDINGS_PAGE = 50;
+const LEADERS = 15;
+const LEADERBOARDS = [
+  ["Combined", (s: AssessedStore) => s.risk_index, (s: AssessedStore) => one(s.risk_index)],
+  [
+    "Sanitation",
+    (s: AssessedStore) => s.sanitation_index,
+    (s: AssessedStore) => one(s.sanitation_index),
+  ],
+  [
+    "Structural",
+    (s: AssessedStore) => s.structural_index,
+    (s: AssessedStore) => one(s.structural_index),
+  ],
+  // Rodent zones count double, as in the RAMP portal.
+  [
+    "Pest and Rodent",
+    (s: AssessedStore) => s.rodent_zones * 2 + s.pest_zones,
+    (s: AssessedStore) => `${s.rodent_zones}R · ${s.pest_zones}P`,
+  ],
+] as const;
 
 type Scope = { companyId: string; billToId: string; state: string };
 
@@ -95,6 +116,101 @@ function StoreCell({ s }: { s: AssessedStore }) {
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
     </>
+  );
+}
+
+function AssessedStoreMap({ d }: { d: RiskAssessmentDashboard }) {
+  const [, setStore] = useStoreParam();
+  return (
+    <SimpleCard
+      title="Geographic Risk Distribution"
+      description="Each restaurant, colored by its latest classification. Click a dot to open it."
+    >
+      <div className="flex flex-col gap-3">
+        <RiskMap
+          stores={d.stores.map((s) => ({
+            ...s,
+            risk_band: s.classification ?? "Not Scored",
+            risk_index: s.risk_index === null ? null : Number(one(s.risk_index)),
+          }))}
+          bandColor={CLASS_COLOR}
+          onSelect={setStore}
+        />
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {CLASSES.map((c) => (
+            <li key={c} className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="size-2.5 rounded-sm"
+                style={{ background: CLASS_COLOR[c] }}
+              />
+              {c}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </SimpleCard>
+  );
+}
+
+function HighestRisk({ stores }: { stores: AssessedStore[] }) {
+  const [board, setBoard] = useState(0);
+  const [label, score, text] = LEADERBOARDS[board];
+  const top = stores
+    .filter((s) => score(s))
+    .sort((a, b) => (score(b) ?? 0) - (score(a) ?? 0))
+    .slice(0, LEADERS);
+  const most = Math.max(1, ...top.map((s) => score(s) ?? 0));
+  return (
+    <SimpleCard
+      title="Highest-Risk Locations"
+      description={
+        label === "Pest and Rodent"
+          ? "Rodent zones counted double, plus pest zones, at the latest assessment. R = rodent, P = pest."
+          : "Risk index at the latest assessment."
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap gap-1.5">
+          {LEADERBOARDS.map(([name], i) => (
+            <Button
+              key={name}
+              size="sm"
+              variant={i === board ? "default" : "outline"}
+              aria-pressed={i === board}
+              onClick={() => setBoard(i)}
+            >
+              {name}
+            </Button>
+          ))}
+        </div>
+        {top.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No scores yet.</p>
+        ) : (
+          <ol className="flex flex-col gap-2 text-sm">
+            {top.map((s) => (
+              <li
+                key={s.location_id}
+                className="grid grid-cols-[minmax(0,10rem)_1fr_4rem] items-center gap-2"
+              >
+                <span className="min-w-0">
+                  <StoreCell s={s} />
+                </span>
+                <span
+                  aria-hidden
+                  className="h-3"
+                  style={{
+                    background: CLASS_COLOR[s.classification ?? ""] ?? "var(--border)",
+                    width: `${((score(s) ?? 0) / most) * 100}%`,
+                  }}
+                />
+                <span className="text-right tabular-nums">{text(s)}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </SimpleCard>
   );
 }
 
@@ -475,10 +591,14 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
           <StatTile key={label} label={label} value={value} note={note} />
         ))}
       </dl>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <AssessedStoreMap d={d} />
+        <HighestRisk stores={S} />
+      </div>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <SimpleCard
           title="Risk by Market"
-          description="Assessed against every location in the state, latest assessment per restaurant."
+          description="Assessed against the state's target, or every location there without one. Latest assessment per restaurant."
         >
           <DataTableFrame>
             <DataTable>
@@ -496,7 +616,7 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
                   <tr key={c.state}>
                     <td className="p-3">{c.state}</td>
                     <td className="p-3 text-right tabular-nums">
-                      {integer.format(c.assessed)} of {integer.format(c.in_program)}
+                      {integer.format(c.assessed)} of {integer.format(c.target ?? c.in_program)}
                     </td>
                     <td className="p-3 text-right tabular-nums">{one(c.avg_index)}</td>
                     <td className="p-3 text-right tabular-nums">{c.high_or_critical}</td>

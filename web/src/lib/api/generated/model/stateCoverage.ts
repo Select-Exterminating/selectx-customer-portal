@@ -8,6 +8,7 @@
 export interface StateCoverage {
   state: string;
   in_program: number;
+  target: number | null;
   assessed: number;
   avg_index: number | null;
   high_or_critical: number;

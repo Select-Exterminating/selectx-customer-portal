@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # Every field is in the response, so the generated client types none of them as optional.
 _ALL_REQUIRED = ConfigDict(json_schema_serialization_defaults_required=True)
@@ -221,9 +221,20 @@ class AssessmentZone(BaseModel):
     tier5: int
 
 
+class AssessmentTargetRow(BaseModel):
+    state: str = Field(pattern=r"^[A-Z]{2}$")
+    total: int = Field(ge=0, le=100_000)
+
+
+class AssessmentTargets(BaseModel):
+    targets: list[AssessmentTargetRow]
+
+
 class StateCoverage(BaseModel):
     state: str
     in_program: int
+    # The company's target for the state; none when it has none or the view is one bill-to's.
+    target: int | None
     assessed: int
     avg_index: float | None
     high_or_critical: int

@@ -11,6 +11,7 @@ from app.schemas.dashboard import CompanyDashboard
 from app.schemas.program_dashboard import ProgramDashboard
 from app.schemas.program_tabs import (
     AssessmentFindingPage,
+    AssessmentTargets,
     ProgramTabs,
     ReportLibraryPage,
     RiskAssessmentDashboard,
@@ -196,3 +197,37 @@ def get_report_library(
     return program_tabs.report_library(
         db, company.id, bill_to_id=bill_to_id, state=state, q=q, limit=limit, offset=offset
     )
+
+
+@router.get("/companies/{company_id}/assessment-targets", response_model=AssessmentTargets)
+def get_assessment_targets(
+    company_id: uuid.UUID, db: Session = Depends(get_db), scope: AccessScope = Depends(get_scope)
+):
+    """How many of the company's restaurants in each state its risk assessments cover."""
+    company = db.get(Company, company_id)
+    if company is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    scope.require(Perm.companies_read, company.operator_id, read_perm=Perm.companies_read)
+    return AssessmentTargets(targets=program_tabs.assessment_targets(db, company.id))
+
+
+@router.put("/companies/{company_id}/assessment-targets", response_model=AssessmentTargets)
+def put_assessment_targets(
+    company_id: uuid.UUID,
+    body: AssessmentTargets,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """Replace the company's targets. A state left out has no target."""
+    company = db.get(Company, company_id)
+    if company is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    scope.require(Perm.companies_write, company.operator_id, read_perm=Perm.companies_read)
+    states = [row.state for row in body.targets]
+    if len(set(states)) != len(states):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="A state is listed twice"
+        )
+    program_tabs.set_assessment_targets(db, company, body.targets)
+    db.commit()
+    return AssessmentTargets(targets=program_tabs.assessment_targets(db, company.id))
