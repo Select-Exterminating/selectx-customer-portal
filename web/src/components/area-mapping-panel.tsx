@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { DataTable, DataTableFrame } from "@/components/data-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,7 +73,7 @@ function AreaTypes({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
         <div>
-          <CardTitle>PestPac area types</CardTitle>
+          <CardTitle>PestPac Area Types</CardTitle>
           <p className="text-sm text-muted-foreground">
             The zone each type&apos;s areas count as. Areas with no type, or an unmapped one, get no
             zone; findings read from notes get theirs from the notes.
@@ -119,10 +120,10 @@ function AreaTypes({
             No area types yet. Sync them from PestPac to map them to zones.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-muted-foreground">
-                <tr className="border-b border-border">
+          <DataTableFrame>
+            <DataTable>
+              <thead>
+                <tr>
                   <th className="py-2 pr-4 font-medium">Code</th>
                   <th className="py-2 pr-4 font-medium">Description</th>
                   <th className="py-2 pr-4 text-right font-medium">Areas</th>
@@ -162,8 +163,8 @@ function AreaTypes({
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
+          </DataTableFrame>
         )}
       </CardContent>
     </Card>

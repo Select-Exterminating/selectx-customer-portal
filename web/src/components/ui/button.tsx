@@ -7,13 +7,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Brand: primary and secondary actions are uppercase and bold (docs/design-guidance.md §5).
+        // Primary and secondary actions are bold, as written (docs/design-guidance.md §9).
         default:
-          "bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary-hover",
+          "bg-primary font-bold text-primary-foreground hover:bg-primary-hover",
         outline:
           "border-input bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
-          "bg-secondary font-bold tracking-wide text-secondary-foreground uppercase hover:bg-secondary-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary font-bold text-secondary-foreground hover:bg-secondary-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:

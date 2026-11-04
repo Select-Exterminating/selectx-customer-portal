@@ -1,15 +1,18 @@
+import uuid
 from datetime import UTC, date, datetime, timedelta
 
 from app.db.session import SessionLocal
 from app.integrations.openrouter import Usage
-from app.models import ServiceOrder
+from app.models import Report, ServiceOrder
 from app.services import inspection_findings
 from app.services.program_metrics import (
     Visit,
     band_of,
     results,
+    risk_index_at,
     stabilization,
     store_metrics,
+    watch_flags,
 )
 from tests.conftest import headers_for
 from tests.test_service_reports import DRAFT
@@ -222,3 +225,119 @@ def test_program_tabs_group_findings_and_list_what_is_still_open(client, world):
 
     other = client.get(f"/v1/companies/{world.company_a}/program-tabs?state=ZZ", headers=admin)
     assert other.json()["tracker"] == []
+
+
+def test_risk_index_at_only_counts_what_was_known_then():
+    visits = [_visit(0, 3), _visit(30, 0), _visit(120, 1)]
+    # Day 0 alone: all heavy, 40 points.
+    assert risk_index_at(visits, DAY0) == 40
+    # Day 30: heavy and clean, half the activity points; the later visit doesn't count yet.
+    assert risk_index_at(visits, DAY0 + timedelta(days=30)) == 20
+    # Day 300: nothing rated in the 90 days before it.
+    assert risk_index_at(visits, DAY0 + timedelta(days=300)) is None
+
+
+def _profile_visits(client, world):
+    """A heavy start, then clean visits, one with a structural finding and a generated summary."""
+    with SessionLocal() as db:
+        first = _order(world, 9401, 0, "RAMP 1")
+        night = _order(world, 9402, 0, "RAMP 1")
+        travel = _order(world, 9403, 0, "INTTRAVEL")
+        second = _order(world, 9404, 14, "RAMP MONITOR")
+        third = _order(world, 9405, 40, "RAMP MONITOR")
+        db.add_all([first, night, travel, second, third])
+        db.flush()
+        _findings(
+            db,
+            world,
+            first,
+            "heavy",
+            activity_locations=[{"location": "basement wall", "zone": "basement"}],
+            structural_findings=[
+                {
+                    "location": "basement wall",
+                    "zone": "basement",
+                    "issue": "gap at the wall",
+                    "category": "wall/floor gap",
+                    "status": "open",
+                }
+            ],
+        )
+        _findings(
+            db,
+            world,
+            night,
+            "low",
+            activity_locations=[{"location": "basement wall", "zone": "basement"}],
+        )
+        _findings(db, world, second, "none")
+        _findings(db, world, third, "none")
+        db.commit()
+
+
+def test_store_profile_reads_like_store_watch(client, world):
+    _profile_visits(client, world)
+    staff = headers_for(client, world.emails["staff_a"])
+    resp = client.get(
+        f"/v1/companies/{world.company_a}/stores/{world.location_a}/profile", headers=staff
+    )
+    assert resp.status_code == 200
+    p = resp.json()
+    watch = client.get(f"/v1/companies/{world.company_a}/program-dashboard", headers=staff).json()
+    row = next(s for s in watch["stores"] if s["location_id"] == str(world.location_a))
+    # The same store reads the same in Store Watch and its flyover.
+    assert p["attention"] == row["attention"] and p["flags"] == row["flags"]
+    assert p["journey"]["now_index"] == row["risk_index"] == p["trend"][-1]["index"]
+    assert p["as_of"] == watch["as_of"]
+    # The night's two orders merge into one visit, and travel isn't one.
+    assert [v["day"] for v in p["visits"]] == ["2026-07-11", "2026-06-15", "2026-06-01"]
+    assert p["visits"][-1]["activity"] == "heavy"
+    assert p["numbers"]["services"] == 3
+    # Start is the two weeks from the first rated visit: heavy, then clean on day 14.
+    assert p["journey"]["first_rated"] == "2026-06-01"
+    assert p["journey"]["start_activity"] == "heavy"
+    assert p["journey"]["start_index"] is not None
+    assert p["journey"]["index_change"] == p["journey"]["now_index"] - p["journey"]["start_index"]
+    assert [f["category"] for f in p["open_structural"]] == ["wall/floor gap"]
+    grid = p["activity_grid"]
+    assert grid["months"] == ["2026-06", "2026-07"] and grid["rated"] == [2, 1]
+    assert [(z["total"], z["levels"]) for z in grid["zones"]] == [(1, [3, 0])]
+
+
+def test_store_profile_lists_reports_only_for_those_who_can_open_them(client, world):
+    with SessionLocal() as db:
+        report = db.get(Report, world.report_final_a)
+        db.get(ServiceOrder, report.service_order_id).posted = True
+        db.commit()
+    path = f"/v1/companies/{world.company_a}/stores/{world.location_a}/profile"
+    manager = client.get(path, headers=headers_for(client, world.emails["manager_a"])).json()
+    staff = client.get(path, headers=headers_for(client, world.emails["staff_a"])).json()
+    assert staff["reports"], "the world has a final report at location A"
+    assert manager["reports"] == []
+    assert any(v["report_id"] for v in staff["visits"])
+    assert not any(v["report_id"] for v in manager["visits"])
+
+
+def test_store_profile_is_scoped_to_the_company(client, world):
+    admin = headers_for(client, world.emails["admin_a"])
+    sibling = client.post(
+        f"/v1/operators/{world.op_a}/companies", json={"name": "Sibling Co"}, headers=admin
+    ).json()["id"]
+    # Another company's id with this store, and a store that doesn't exist.
+    assert (
+        client.get(f"/v1/companies/{sibling}/stores/{world.location_a}/profile", headers=admin)
+    ).status_code == 404
+    assert (
+        client.get(f"/v1/companies/{world.company_a}/stores/{uuid.uuid4()}/profile", headers=admin)
+    ).status_code == 404
+
+
+def test_flags_name_zones_as_the_operator_does():
+    m = store_metrics(
+        "loc",
+        [_visit(0, 2, zones={"bar_beverage"})],
+        None,
+        as_of=DAY0 + timedelta(days=1),
+    )
+    [flag] = [f for f in watch_flags(m, {"bar_beverage": "Bar & Beverage"}) if f.code == "active"]
+    assert "in Bar & Beverage." in flag.detail and "bar_beverage" not in flag.detail

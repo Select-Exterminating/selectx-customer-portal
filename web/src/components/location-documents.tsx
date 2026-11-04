@@ -153,7 +153,7 @@ function DocumentList({ docs, empty }: { docs: DocumentRead[]; empty: string }) 
   const [shown, setShown] = useState(PAGE_SIZE);
   return (
     <div className="flex flex-col gap-3">
-      <ul className="divide-y divide-border border border-border bg-card">
+      <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {docs.length === 0 && <li className="p-4 text-muted-foreground">{empty}</li>}
         {docs.slice(0, shown).map((doc) => (
           <DocumentRow key={doc.id} doc={doc} />

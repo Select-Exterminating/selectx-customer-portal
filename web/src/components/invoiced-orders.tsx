@@ -44,7 +44,7 @@ function InvoicedOrderList({
   const page = query.data.data;
   return (
     <div className="flex flex-col gap-3">
-      <ul className="divide-y divide-border border border-border bg-card">
+      <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {page.items.length === 0 && (
           <li className="p-4 text-muted-foreground">No invoices recorded yet.</li>
         )}
@@ -57,7 +57,7 @@ function InvoicedOrderList({
             <div className="mt-3">
               <div className="mb-1 text-xs font-medium text-muted-foreground">Service order</div>
               {item.service_order ? (
-                <ul className="border border-border bg-muted/40">
+                <ul className="rounded-lg border border-border bg-muted/40">
                   <OrderRow order={item.service_order} showLocation={false} />
                 </ul>
               ) : (

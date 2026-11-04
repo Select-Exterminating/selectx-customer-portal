@@ -141,7 +141,7 @@ function FieldEditor({
       <legend className="mb-2">{label}</legend>
       {helpText}
       {sections.map((section, n) => (
-        <div key={n} className="flex flex-col gap-2 border border-border bg-card p-3">
+        <div key={n} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3">
           <div className="flex items-center gap-2">
             <Input
               aria-label={`Section ${n + 1} heading`}
@@ -320,7 +320,7 @@ function Preview({ reportId, version }: { reportId: string; version: string }) {
           title="Report preview"
           sandbox=""
           srcDoc={state.html}
-          className="h-[80vh] w-full border border-border bg-white"
+          className="h-[80vh] w-full rounded-lg border border-border bg-white"
         />
       )}
     </div>
@@ -487,7 +487,7 @@ function Editor({ report }: { report: ReportRead }) {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="sources">Notes and photos</TabsTrigger>
+          <TabsTrigger value="sources">Notes and Photos</TabsTrigger>
           <TabsTrigger value="report">Report</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
@@ -500,7 +500,7 @@ function Editor({ report }: { report: ReportRead }) {
                 The comment on the service order in PestPac, as it was when the report was started.
                 Sent with the selected notes when checked.
               </p>
-              <div className="flex gap-3 border border-border bg-card p-3">
+              <div className="flex gap-3 rounded-lg border border-border bg-card p-3">
                 <input
                   type="checkbox"
                   className="mt-1 size-4 accent-primary"
@@ -525,7 +525,7 @@ function Editor({ report }: { report: ReportRead }) {
               linked to the order, start selected. Selected notes (and the technician comment, when
               checked) are what the narrative is drafted from.
             </p>
-            <ul className="divide-y divide-border border border-border bg-card">
+            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
               {notes.length === 0 && (
                 <li className="p-4 text-muted-foreground">
                   No notes near the work date. Sync the location&apos;s service orders to collect
@@ -567,7 +567,7 @@ function Editor({ report }: { report: ReportRead }) {
                 PestPac are matched by date and may describe another technician&apos;s work on the
                 same visit. Selected comments are sent with the notes.
               </p>
-              <ul className="divide-y divide-border border border-border bg-card">
+              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                 {conditionComments.map((c, i) => (
                   <li key={c.comment_id} className="flex gap-3 p-3">
                     <input
@@ -607,7 +607,7 @@ function Editor({ report }: { report: ReportRead }) {
               Images from the day before to the day after the work date. Selected photos appear in
               the report in this order, with their captions.
             </p>
-            <ul className="divide-y divide-border border border-border bg-card">
+            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
               {photos.length === 0 && (
                 <li className="p-4 text-muted-foreground">
                   No photos near the work date. Sync the location&apos;s documents and conditions to

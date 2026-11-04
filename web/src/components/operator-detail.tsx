@@ -165,7 +165,7 @@ export function OperatorDetail() {
             <TabsTrigger value="gocanvas-api">GoCanvas API</TabsTrigger>
           )}
           {can("bill_tos:read", operatorId) && (
-            <TabsTrigger value="areas">Area mapping</TabsTrigger>
+            <TabsTrigger value="areas">Area Mapping</TabsTrigger>
           )}
           {can("webhooks:read", operatorId) && <TabsTrigger value="webhooks">Webhooks</TabsTrigger>}
           {can("webhooks:read", operatorId) && <TabsTrigger value="gocanvas">GoCanvas</TabsTrigger>}

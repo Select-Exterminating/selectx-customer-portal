@@ -11,7 +11,7 @@ import type { ProgramResults } from './programResults';
 import type { StoreWatchRow } from './storeWatchRow';
 
 /**
- * Program results for Select staff, worked out from worked orders and their findings.
+ * Program results, worked out from worked orders and their findings.
  */
 export interface ProgramDashboard {
   company_id: string;

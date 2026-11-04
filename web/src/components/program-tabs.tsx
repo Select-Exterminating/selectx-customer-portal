@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -21,7 +20,11 @@ import {
   formatMonth,
   num,
   pct,
+  STATEMENT_BAND,
 } from "@/components/program-overview";
+import { DataTable, DataTableFrame } from "@/components/data-table";
+import { StoreLink } from "@/components/dashboard-link";
+import { StatTile } from "@/components/stat-tile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +87,7 @@ function WithTabs({
   return <>{render(tabs.data.data)}</>;
 }
 
-function StoreLink({
+function StoreCell({
   s,
 }: {
   s: {
@@ -97,20 +100,15 @@ function StoreLink({
 }) {
   return (
     <>
-      <Link
-        href={`/locations/${s.location_id}`}
-        className="font-medium text-primary hover:underline"
-      >
+      <StoreLink locationId={s.location_id} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </Link>
+      </StoreLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
     </>
   );
 }
-
-const TABLE_HEAD = "bg-muted text-left text-muted-foreground";
 
 function TableCard({
   title,
@@ -131,7 +129,7 @@ function TableCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {toolbar}
-        <div className="max-h-[32rem] overflow-auto border border-border">{children}</div>
+        <DataTableFrame className="max-h-[32rem]">{children}</DataTableFrame>
       </CardContent>
     </Card>
   );
@@ -216,7 +214,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
     <div className="flex flex-col gap-6">
       <ChartGrid>
         <ChartCard
-          title="Activity falls as stores move through the program"
+          title="Activity Falls as Stores Move Through the Program"
           description="Share of rated visits finding rodent activity, by month since each store's first visit."
           rows={a.cohort.map((c) => [
             `Month ${c.month}`,
@@ -242,7 +240,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
           </ChartContainer>
         </ChartCard>
         <ChartCard
-          title="Activity rate by calendar month"
+          title="Activity Rate by Calendar Month"
           description="Any activity and heavy activity, as a share of rated visits."
           rows={a.months.map((m) => [
             formatMonth(m.month),
@@ -285,7 +283,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
           </ChartContainer>
         </ChartCard>
         <ChartCard
-          title="Documented captures by month"
+          title="Documented Captures by Month"
           description="Rodents removed where the notes state a number. Notes that only say captures aren't counted."
           rows={a.months.map((m) => [formatMonth(m.month), integer.format(m.captures)])}
         >
@@ -308,17 +306,17 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
           </ChartContainer>
         </ChartCard>
         <BreakdownChart
-          title="Where rodent activity was found"
+          title="Where Rodent Activity Was Found"
           description="Visits with activity, by zone of the restaurant."
           data={a.zones}
         />
       </ChartGrid>
       <TableCard
-        title="Stores with recent activity"
+        title="Stores With Recent Activity"
         description="Stores whose latest rated visit found activity, most recent first."
       >
-        <table className="w-full text-sm">
-          <thead className={TABLE_HEAD}>
+        <DataTable>
+          <thead>
             <tr>
               <th className="p-3 font-medium">Store</th>
               <th className="p-3 font-medium">Last activity</th>
@@ -331,7 +329,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
             {a.recent.map((s) => (
               <tr key={s.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={s} />
+                  <StoreCell s={s} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{day(s.last_activity)}</td>
                 <td className="p-3 capitalize">{s.level}</td>
@@ -349,7 +347,7 @@ function RodentActivity({ a }: { a: RodentActivityTab }) {
               </tr>
             )}
           </tbody>
-        </table>
+        </DataTable>
       </TableCard>
     </div>
   );
@@ -382,20 +380,20 @@ function Structural({ s }: { s: StructuralTab }) {
     <div className="flex flex-col gap-6">
       <ChartGrid>
         <BreakdownChart
-          title="Structural findings by type"
+          title="Structural Findings by Type"
           description="Findings logged across all visits; the darker part is logged as remediated."
           data={s.categories}
           remediated
         />
         <BreakdownChart
-          title="Structural findings by zone"
+          title="Structural Findings by Zone"
           description="Where entry points and voids were found."
           data={s.zones}
           remediated
         />
       </ChartGrid>
       <ChartCard
-        title="Findings logged vs. remediated by month"
+        title="Findings Logged vs. Remediated by Month"
         description="Bars: structural findings logged. Line: share of those logged as remediated."
         rows={months.map((m) => [
           formatMonth(m.month),
@@ -444,7 +442,7 @@ function Structural({ s }: { s: StructuralTab }) {
         </ChartContainer>
       </ChartCard>
       <TableCard
-        title="Open structural vulnerabilities"
+        title="Open Structural Vulnerabilities"
         description="The latest report of each store's distinct vulnerability (type and zone) where it was still open or in progress."
         toolbar={
           <div className="flex flex-wrap items-end gap-3">
@@ -464,8 +462,8 @@ function Structural({ s }: { s: StructuralTab }) {
           </div>
         }
       >
-        <table className="w-full text-sm">
-          <thead className={TABLE_HEAD}>
+        <DataTable>
+          <thead>
             <tr>
               <th className="p-3 font-medium">Store</th>
               <th className="p-3 font-medium">Type</th>
@@ -479,7 +477,7 @@ function Structural({ s }: { s: StructuralTab }) {
             {open.slice(0, 200).map((o, i) => (
               <tr key={`${o.location_id}-${o.category}-${o.zone}-${i}`} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={o} />
+                  <StoreCell s={o} />
                 </td>
                 <td className="p-3">{o.category}</td>
                 <td className="p-3">{o.zone}</td>
@@ -498,7 +496,7 @@ function Structural({ s }: { s: StructuralTab }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </TableCard>
     </div>
   );
@@ -516,22 +514,22 @@ function Sanitation({ s }: { s: SanitationTab }) {
     <div className="flex flex-col gap-6">
       <ChartGrid>
         <BreakdownChart
-          title="Sanitation concerns by type"
+          title="Sanitation Concerns by Type"
           description="Conditions that feed or shelter pests, as logged by technicians."
           data={s.categories}
         />
         <BreakdownChart
-          title="Sanitation concerns by zone"
+          title="Sanitation Concerns by Zone"
           description="Where in the restaurant they were found."
           data={s.zones}
         />
         <BreakdownChart
-          title="Secondary pests found"
+          title="Secondary Pests Found"
           description="Non-rodent pests noted during visits."
           data={s.pests}
         />
         <ChartCard
-          title="Share of visits with concerns by month"
+          title="Share of Visits With Concerns by Month"
           description="Visits with any sanitation concern, and with secondary pests."
           rows={s.months.map((m) => [
             formatMonth(m.month),
@@ -574,11 +572,11 @@ function Sanitation({ s }: { s: SanitationTab }) {
         </ChartCard>
       </ChartGrid>
       <TableCard
-        title="Stores with recurring sanitation concerns"
+        title="Stores With Recurring Sanitation Concerns"
         description="Stores with sanitation findings on three or more visits."
       >
-        <table className="w-full text-sm">
-          <thead className={TABLE_HEAD}>
+        <DataTable>
+          <thead>
             <tr>
               <th className="p-3 font-medium">Store</th>
               <th className="p-3 text-right font-medium">Visits with concerns</th>
@@ -590,7 +588,7 @@ function Sanitation({ s }: { s: SanitationTab }) {
             {s.stores.map((r) => (
               <tr key={r.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={r} />
+                  <StoreCell s={r} />
                 </td>
                 <td className="p-3 text-right tabular-nums">
                   {integer.format(r.visits_with_concerns)} of {integer.format(r.visits)}
@@ -600,7 +598,7 @@ function Sanitation({ s }: { s: SanitationTab }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </TableCard>
     </div>
   );
@@ -627,13 +625,13 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
     <div className="flex flex-col gap-4">
       <Alert>
         <AlertDescription>
-          These milestones are worked out from worked orders. Launch, inspection requested, proposal
-          submitted, and approved aren&apos;t recorded anywhere we can read yet, so they aren&apos;t
-          shown, and the stage is our own reading of the orders.
+          These milestones come from completed service visits. Launch, inspection requested,
+          proposal submitted, and approved aren&apos;t tracked here yet, and each store&apos;s stage
+          is based on its service history.
         </AlertDescription>
       </Alert>
       <TableCard
-        title="Program tracker"
+        title="Program Tracker"
         description="Every store with a RAMP order and where it stands, newest first."
         toolbar={
           <div className="flex flex-wrap items-end gap-3">
@@ -668,8 +666,8 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
           </div>
         }
       >
-        <table className="w-full min-w-[820px] text-sm">
-          <thead className={TABLE_HEAD}>
+        <DataTable className="min-w-[820px]">
+          <thead>
             <tr>
               <th className="p-3 font-medium">Store</th>
               <th className="p-3 font-medium">Tier</th>
@@ -686,7 +684,7 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
             {shown.map((r) => (
               <tr key={r.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={r} />
+                  <StoreCell s={r} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{r.tier ?? "—"}</td>
                 <td className="p-3">{r.stage}</td>
@@ -699,7 +697,7 @@ function Tracker({ rows }: { rows: TrackerRow[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </TableCard>
     </div>
   );
@@ -784,7 +782,7 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Services performed per store</CardTitle>
+          <CardTitle>Services Performed per Store</CardTitle>
           <CardDescription>
             Every service visit on file, colored by the store&apos;s current risk band.
           </CardDescription>
@@ -796,9 +794,9 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
                 key={s.location_id}
                 className="grid grid-cols-[6rem_1fr_3rem] items-center gap-2 text-sm"
               >
-                <Link href={`/locations/${s.location_id}`} className="text-primary hover:underline">
+                <StoreLink locationId={s.location_id}>
                   {s.store_number ? `#${s.store_number}` : s.name}
-                </Link>
+                </StoreLink>
                 <span
                   aria-hidden
                   className="h-3"
@@ -820,7 +818,7 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
         </CardContent>
       </Card>
       <TableCard
-        title="Store scorecard"
+        title="Store Scorecard"
         description="Sort by any column. Open a store for its full history."
         toolbar={
           <div className="flex flex-wrap items-end gap-3">
@@ -851,8 +849,8 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
           </div>
         }
       >
-        <table className="w-full min-w-[820px] text-sm">
-          <thead className={TABLE_HEAD}>
+        <DataTable className="min-w-[820px]">
+          <thead>
             <tr>
               {SCORE_COLUMNS.map((c) => (
                 <th
@@ -882,7 +880,7 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
             {rows.map((s) => (
               <tr key={s.location_id} className="align-top">
                 <td className="p-3">
-                  <StoreLink s={s} />
+                  <StoreCell s={s} />
                 </td>
                 <td className="p-3 whitespace-nowrap">{s.tier ?? "—"}</td>
                 <td className="p-3 text-right tabular-nums">{integer.format(s.services)}</td>
@@ -898,7 +896,7 @@ function StoreScorecard({ d }: { d: ProgramDashboard }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       </TableCard>
     </div>
   );
@@ -917,15 +915,15 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
     <div className="flex flex-col gap-6">
       <Alert>
         <AlertDescription>
-          The customer&apos;s own risk scores and priority lists (service tickets, closures, EcoLab
-          findings, RiskKey level) haven&apos;t been loaded, so the comparison of their score
-          against field findings isn&apos;t available yet.
+          This company&apos;s own risk scores and priority lists (service tickets, closures, outside
+          inspection findings, risk ratings) haven&apos;t been loaded, so they can&apos;t be
+          compared with field findings yet.
         </AlertDescription>
       </Alert>
       <ChartGrid>
         <Card>
           <CardHeader>
-            <CardTitle>How the RAMP risk index works</CardTitle>
+            <CardTitle>How the RAMP Risk Index Works</CardTitle>
             <CardDescription>
               Each store gets a 0–100 score from its own visits over the 90 days ending at its
               latest rated visit. Higher means more exposure.
@@ -958,11 +956,11 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
           </CardContent>
         </Card>
         <TableCard
-          title="Highest risk index"
+          title="Highest Risk Index"
           description="The 25 stores scoring highest from field findings."
         >
-          <table className="w-full text-sm">
-            <thead className={TABLE_HEAD}>
+          <DataTable>
+            <thead>
               <tr>
                 <th className="p-3 font-medium">Store</th>
                 <th className="p-3 font-medium">Band</th>
@@ -973,7 +971,7 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
               {rated.map((s) => (
                 <tr key={s.location_id} className="align-top">
                   <td className="p-3">
-                    <StoreLink s={s} />
+                    <StoreCell s={s} />
                   </td>
                   <td className="p-3">
                     <span aria-hidden className="mr-2 inline-block size-2.5" style={bandStyle(s)} />
@@ -983,7 +981,7 @@ function RiskModel({ d }: { d: ProgramDashboard }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </TableCard>
       </ChartGrid>
     </div>
@@ -997,14 +995,7 @@ const programMonthConfig = {
 } satisfies ChartConfig;
 
 function Tile({ value, label, note }: { value: string; label: string; note?: string }) {
-  return (
-    <div className="border border-border bg-card p-4">
-      <dt className="sr-only">{label}</dt>
-      <dd className="font-heading text-3xl font-bold">{value}</dd>
-      <dd className="text-sm font-bold">{label}</dd>
-      {note && <dd className="text-xs text-muted-foreground">{note}</dd>}
-    </div>
-  );
+  return <StatTile label={label} value={value} note={note} />;
 }
 
 function HealthTable({
@@ -1019,8 +1010,8 @@ function HealthTable({
       title={title}
       description="Treated stores by their outcome today; recurrence counts stores that lost Stabilized at least once."
     >
-      <table className="w-full text-sm">
-        <thead className={TABLE_HEAD}>
+      <DataTable>
+        <thead>
           <tr>
             <th className="p-3 font-medium">{title.split(" by ")[1]}</th>
             <th className="p-3 text-right font-medium">Treated</th>
@@ -1042,7 +1033,7 @@ function HealthTable({
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </TableCard>
   );
 }
@@ -1054,17 +1045,19 @@ function Executive({ d }: { d: ProgramTabs }) {
   const tiers = e.tiers.map((t) => `${integer.format(t.visits)} ${t.label}`).join(" · ");
   return (
     <div className="flex flex-col gap-8">
-      <section className="bg-ink px-6 py-8 text-white sm:px-8">
-        <Eyebrow className="text-highlight">Executive review · live from the field record</Eyebrow>
+      <section className={STATEMENT_BAND}>
+        <Eyebrow className="text-brand-green">
+          Executive review · live from the field record
+        </Eyebrow>
         <h2 className="mt-3 max-w-4xl text-2xl leading-snug sm:text-3xl">
           <span className="text-highlight">{integer.format(e.stores_serviced)} stores</span> served
           since {day(e.inception)},{" "}
           <span className="text-highlight">{integer.format(e.stabilized_now)} stabilized</span>{" "}
           today.
         </h2>
-        <div aria-hidden className="mt-4 h-1 w-16 bg-highlight" />
-        <p className="mt-4 max-w-3xl text-sm">
-          Every figure here is calculated from worked orders and findings, through {day(e.through)}.
+        <p className="mt-3 max-w-3xl text-sm text-ink-muted">
+          Every figure here is calculated from completed service visits and their findings, through{" "}
+          {day(e.through)}.
         </p>
       </section>
 
@@ -1089,7 +1082,7 @@ function Executive({ d }: { d: ProgramTabs }) {
         </dl>
         <ChartGrid>
           <BreakdownChart
-            title="Visits by type"
+            title="Visits by Type"
             description="Distinct visits by the kind of order."
             data={e.visit_types.map((v) => ({
               label: v.label,
@@ -1099,8 +1092,8 @@ function Executive({ d }: { d: ProgramTabs }) {
             }))}
           />
           <ChartCard
-            title="Visits by month"
-            description="A location's worked orders on one date count as one visit."
+            title="Visits by Month"
+            description="A location's completed orders on one date count as one visit."
             rows={e.months.map((m) => [formatMonth(m.month), integer.format(m.visits)])}
           >
             <ChartContainer config={programMonthConfig} className="aspect-auto h-64 w-full">
@@ -1149,8 +1142,8 @@ function Executive({ d }: { d: ProgramTabs }) {
           />
         </dl>
         <ChartGrid>
-          <HealthTable title="Outcomes by state" rows={e.by_state} />
-          <HealthTable title="Outcomes by tier" rows={e.by_tier} />
+          <HealthTable title="Outcomes by State" rows={e.by_state} />
+          <HealthTable title="Outcomes by Tier" rows={e.by_tier} />
         </ChartGrid>
       </section>
 
@@ -1158,11 +1151,11 @@ function Executive({ d }: { d: ProgramTabs }) {
         <Eyebrow>Section 03 · The yield</Eyebrow>
         <ChartGrid>
           <TableCard
-            title="RAMP phase vs. monitoring phase"
+            title="RAMP Phase vs. Monitoring Phase"
             description="Rated orders by their service code: activity concentrates in active intervention."
           >
-            <table className="w-full text-sm">
-              <thead className={TABLE_HEAD}>
+            <DataTable>
+              <thead>
                 <tr>
                   <th className="p-3 font-medium">Phase</th>
                   <th className="p-3 text-right font-medium">Rated orders</th>
@@ -1180,14 +1173,14 @@ function Executive({ d }: { d: ProgramTabs }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </TableCard>
           <TableCard
-            title="Rats and mice"
+            title="Rats and Mice"
             description="Stores whose findings name only one species, and how they stabilize."
           >
-            <table className="w-full text-sm">
-              <thead className={TABLE_HEAD}>
+            <DataTable>
+              <thead>
                 <tr>
                   <th className="p-3 font-medium">Species</th>
                   <th className="p-3 text-right font-medium">Stores</th>
@@ -1205,7 +1198,7 @@ function Executive({ d }: { d: ProgramTabs }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </TableCard>
         </ChartGrid>
       </section>
@@ -1213,7 +1206,7 @@ function Executive({ d }: { d: ProgramTabs }) {
       <section className="flex flex-col gap-4">
         <Eyebrow>Section 04 · The operating model</Eyebrow>
         <BreakdownChart
-          title="Risk-based monitoring"
+          title="Risk-Based Monitoring"
           description="The condition sets the cadence: each treated store, placed by its own record."
           data={e.cadence.map((v) => ({
             label: v.label,

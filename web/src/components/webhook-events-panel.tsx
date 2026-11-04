@@ -312,7 +312,7 @@ export function WebhookEventsPanel({ operatorId }: { operatorId: string }) {
       )}
       {page && (
         <>
-          <ul className="divide-y divide-border border border-border bg-card">
+          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {page.items.length === 0 && (
               <li className="p-4 text-muted-foreground">No webhook events received.</li>
             )}

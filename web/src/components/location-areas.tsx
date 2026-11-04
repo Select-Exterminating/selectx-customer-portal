@@ -23,14 +23,14 @@ export function LocationAreas({ locationId }: { locationId: string }) {
   const list = areas.data.data;
   if (list.length === 0) {
     return (
-      <p className="border border-border bg-card p-4 text-muted-foreground">
+      <p className="rounded-lg border border-border bg-card p-4 text-muted-foreground">
         No areas yet. They&apos;re set up in PestPac and come in with &ldquo;Documents and
         conditions&rdquo;.
       </p>
     );
   }
   return (
-    <ul className="divide-y divide-border border border-border bg-card">
+    <ul className="divide-y divide-border rounded-lg border border-border bg-card">
       {list.map((a) => (
         <li
           key={a.id}

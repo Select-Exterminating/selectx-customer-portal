@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { StoreLink } from "@/components/dashboard-link";
+import { DataTable, DataTableFrame } from "@/components/data-table";
 import { day } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ export function ReportLibrary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Generated reports</CardTitle>
+        <CardTitle>Generated Reports</CardTitle>
         <CardDescription>
           Service reports finished in this portal, newest first. Each opens at its current version.
         </CardDescription>
@@ -68,9 +70,9 @@ export function ReportLibrary({
             </AlertDescription>
           </Alert>
         )}
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-muted text-left text-muted-foreground">
+        <DataTableFrame>
+          <DataTable className="min-w-[640px]">
+            <thead>
               <tr>
                 <th className="p-3 font-medium">Report</th>
                 <th className="p-3 font-medium">Store</th>
@@ -96,12 +98,9 @@ export function ReportLibrary({
                     )}
                   </td>
                   <td className="p-3 whitespace-nowrap">
-                    <Link
-                      href={`/locations/${report.location_id}`}
-                      className="text-primary hover:underline"
-                    >
+                    <StoreLink locationId={report.location_id}>
                       {report.store_number ? `#${report.store_number}` : report.name}
-                    </Link>
+                    </StoreLink>
                   </td>
                   <td className="p-3 whitespace-nowrap">{report.order_number ?? "—"}</td>
                   <td className="p-3 whitespace-nowrap">{day(report.work_date)}</td>
@@ -116,8 +115,8 @@ export function ReportLibrary({
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataTableFrame>
         {pages > 1 && (
           <div className="flex items-center justify-center gap-3 text-sm">
             <Button variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>

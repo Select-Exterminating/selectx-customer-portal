@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { DataTable, DataTableFrame } from "@/components/data-table";
 import { ExportButton } from "@/components/export-button";
 import { formatPestPacDate } from "@/components/service-order-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -58,7 +59,7 @@ function InspectionsTable({
 }) {
   if (inspections.length === 0) {
     return (
-      <p className="border border-border bg-card p-4 text-muted-foreground">
+      <p className="rounded-lg border border-border bg-card p-4 text-muted-foreground">
         No risk inspections yet.
       </p>
     );
@@ -71,9 +72,9 @@ function InspectionsTable({
           <ExportButton name={exportName} rows={inspections} columns={exportColumns(withStore)} />
         </div>
       </div>
-      <div className="border border-border bg-card px-4">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-xs text-muted-foreground">
+      <DataTableFrame>
+        <DataTable>
+          <thead>
             <tr>
               <th scope="col" className="py-2 pr-3 font-medium">
                 Inspected
@@ -128,8 +129,8 @@ function InspectionsTable({
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
+      </DataTableFrame>
     </div>
   );
 }

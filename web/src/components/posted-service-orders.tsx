@@ -184,7 +184,7 @@ function OrderList({
   const page = query.data.data;
   return (
     <div className="flex flex-col gap-3">
-      <ul className="divide-y divide-border border border-border bg-card">
+      <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {page.items.length === 0 && (
           <li className="p-4 text-muted-foreground">
             {filtered

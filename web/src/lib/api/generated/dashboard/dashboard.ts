@@ -32,7 +32,8 @@ import type {
   ProgramDashboard,
   ProgramTabs,
   ReportLibraryPage,
-  RiskAssessmentDashboard
+  RiskAssessmentDashboard,
+  StoreProfile
 } from '../model';
 
 import { bffFetch } from '../../fetcher';
@@ -223,8 +224,7 @@ export const getDashboardGetProgramDashboardUrl = (companyId: string,
 }
 
 /**
- * Program results, Store Watch, and the risk index, from findings. Select staff only:
- * findings are internal, so company users get 404 here (no company_id is passed).
+ * Program results, Store Watch, and the risk index, from findings.
  * @summary Get Program Dashboard
  */
 export const dashboardGetProgramDashboard = async (companyId: string,
@@ -709,6 +709,132 @@ export function useDashboardGetRiskAssessmentFindings<TData = Awaited<ReturnType
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDashboardGetRiskAssessmentFindingsQueryOptions(companyId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardGetStoreProfileResponse200 = {
+  data: StoreProfile
+  status: 200
+}
+
+export type dashboardGetStoreProfileResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetStoreProfileResponseSuccess = (dashboardGetStoreProfileResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetStoreProfileResponseError = (dashboardGetStoreProfileResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetStoreProfileUrl = (companyId: string,
+    locationId: string,) => {
+
+
+
+
+  return `/v1/companies/${companyId}/stores/${locationId}/profile`
+}
+
+/**
+ * One store's flyover. Reports are listed only for callers who can open them.
+ * @summary Get Store Profile
+ */
+export const dashboardGetStoreProfile = async (companyId: string,
+    locationId: string, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetStoreProfileResponseSuccess> => {
+
+  return bffFetch<dashboardGetStoreProfileResponseSuccess>(getDashboardGetStoreProfileUrl(companyId,locationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetStoreProfileQueryKey = (companyId: string,
+    locationId: string,) => {
+    return [
+    `/v1/companies/${companyId}/stores/${locationId}/profile`
+    ] as const;
+    }
+
+
+export const getDashboardGetStoreProfileQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError = HTTPValidationError>(companyId: string,
+    locationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetStoreProfileQueryKey(companyId,locationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetStoreProfile>>> = ({ signal }) => dashboardGetStoreProfile(companyId,locationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined && locationId !== null && locationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetStoreProfileQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetStoreProfile>>>
+export type DashboardGetStoreProfileQueryError = HTTPValidationError
+
+
+export function useDashboardGetStoreProfile<TData = Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError = HTTPValidationError>(
+ companyId: string,
+    locationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetStoreProfile>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetStoreProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetStoreProfile<TData = Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError = HTTPValidationError>(
+ companyId: string,
+    locationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetStoreProfile>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetStoreProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetStoreProfile<TData = Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError = HTTPValidationError>(
+ companyId: string,
+    locationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Store Profile
+ */
+
+export function useDashboardGetStoreProfile<TData = Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError = HTTPValidationError>(
+ companyId: string,
+    locationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetStoreProfile>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetStoreProfileQueryOptions(companyId,locationId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

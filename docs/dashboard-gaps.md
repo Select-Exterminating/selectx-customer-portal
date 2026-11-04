@@ -15,6 +15,8 @@ Written 2026-11-01. Compares each tab of the RAMP portal (`../select-ramp-portal
 | Risk Model | Partly built | Chipotle's risk score vs. field findings chart and the priority risk lists table. |
 | Reports | Built, generated reports only | By decision (2026-11-01), the tab lists the service reports we generate, not invoices or other PestPac documents. The Drive's service report PDFs and Riskgate forms aren't listed. |
 
+The store flyover is built too. It doesn't show: tracker dates (inspection requested, approved, abatement started; first monitoring comes from orders) and the program phase built on them (it shows the stage from service history), client-reported findings, Chipotle's risk list and rank, real estate type, sub-region, or the Drive folder and its reports.
+
 ## Data we need
 
 | Data | Unlocks | Where it is today | How to get it |

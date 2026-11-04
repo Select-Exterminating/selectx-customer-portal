@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Search } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 
+import { DataTable, DataTableFrame } from "@/components/data-table";
 import { ExportButton } from "@/components/export-button";
 import { formatPestPacDate } from "@/components/service-order-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -257,15 +258,17 @@ export function LocationsTable({
       </div>
 
       {all.length === 0 ? (
-        <p className="border border-border bg-card p-4 text-muted-foreground">{emptyText}</p>
+        <p className="rounded-lg border border-border bg-card p-4 text-muted-foreground">
+          {emptyText}
+        </p>
       ) : matching.length === 0 ? (
-        <p className="border border-border bg-card p-4 text-muted-foreground">
+        <p className="rounded-lg border border-border bg-card p-4 text-muted-foreground">
           No locations match “{deferredQuery}”.
         </p>
       ) : (
-        <div className="border border-border bg-card px-4">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border text-xs text-muted-foreground">
+        <DataTableFrame>
+          <DataTable>
+            <thead>
               <tr>
                 <SortHeader
                   label="Location"
@@ -316,8 +319,8 @@ export function LocationsTable({
                 />
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataTableFrame>
       )}
 
       {pages > 1 && (

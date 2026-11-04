@@ -2,10 +2,11 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import BillTo, Company
+from app.models import BillTo, Company, Location
 from app.schemas.dashboard import CompanyDashboard
 from app.schemas.program_dashboard import ProgramDashboard
 from app.schemas.program_tabs import (
@@ -14,9 +15,10 @@ from app.schemas.program_tabs import (
     ReportLibraryPage,
     RiskAssessmentDashboard,
 )
+from app.schemas.store_profile import StoreProfile
 from app.security.access import AccessScope, get_scope
 from app.security.permissions import Perm
-from app.services import dashboard, program_metrics, program_tabs
+from app.services import dashboard, program_metrics, program_tabs, store_profile
 
 router = APIRouter(tags=["dashboard"])
 
@@ -53,29 +55,31 @@ def get_program_dashboard(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    """Program results, Store Watch, and the risk index, from findings. Select staff only:
-    findings are internal, so company users get 404 here (no company_id is passed)."""
-    company = db.get(Company, company_id)
-    if company is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    scope.require(Perm.dashboards_read, company.operator_id, read_perm=Perm.companies_read)
-    if bill_to_id is not None:
-        bill_to = db.get(BillTo, bill_to_id)
-        if bill_to is None or bill_to.company_id != company.id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    """Program results, Store Watch, and the risk index, from findings."""
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_metrics.program_dashboard(
         db, company.id, bill_to_id=bill_to_id, state=state, today=date.today()
     )
 
 
-def _staff_company(
-    db: Session, scope: AccessScope, company_id: uuid.UUID, bill_to_id: uuid.UUID | None
+def _scoped_company(
+    db: Session,
+    scope: AccessScope,
+    company_id: uuid.UUID,
+    bill_to_id: uuid.UUID | None,
+    *,
+    company_users: bool,
 ) -> Company:
-    """The company, for its program tabs: Select staff only, as findings are internal."""
+    """The company, for a dashboard route. `company_users` lets the company's own users in."""
     company = db.get(Company, company_id)
     if company is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    scope.require(Perm.dashboards_read, company.operator_id, read_perm=Perm.companies_read)
+    scope.require(
+        Perm.dashboards_read,
+        company.operator_id,
+        read_perm=Perm.companies_read,
+        company_id=company.id if company_users else None,
+    )
     if bill_to_id is not None:
         bill_to = db.get(BillTo, bill_to_id)
         if bill_to is None or bill_to.company_id != company.id:
@@ -92,7 +96,7 @@ def get_program_tabs(
     scope: AccessScope = Depends(get_scope),
 ):
     """Rodent activity, structural, sanitation and pests, tracker, and executive review."""
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.program_tabs(
         db,
         company.id,
@@ -114,7 +118,7 @@ def get_risk_assessment_dashboard(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.risk_assessment_dashboard(
         db, company.id, bill_to_id=bill_to_id, state=state
     )
@@ -136,7 +140,7 @@ def get_risk_assessment_findings(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=True)
     return program_tabs.assessment_findings(
         db,
         company.id,
@@ -147,6 +151,32 @@ def get_risk_assessment_findings(
         zone=zone,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/companies/{company_id}/stores/{location_id}/profile", response_model=StoreProfile)
+def get_store_profile(
+    company_id: uuid.UUID,
+    location_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """One store's flyover. Reports are listed only for callers who can open them."""
+    company = _scoped_company(db, scope, company_id, None, company_users=True)
+    location = db.get(Location, location_id)
+    if (
+        location is None
+        or location.removed_at is not None
+        or db.scalar(select(BillTo.company_id).where(BillTo.id == location.bill_to_id))
+        != company.id
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return store_profile.store_profile(
+        db,
+        company,
+        location,
+        include_reports=scope.can(Perm.reports_read, company.operator_id),
+        today=date.today(),
     )
 
 
@@ -161,7 +191,8 @@ def get_report_library(
     db: Session = Depends(get_db),
     scope: AccessScope = Depends(get_scope),
 ):
-    company = _staff_company(db, scope, company_id, bill_to_id)
+    # Staff only: company users can't open report PDFs yet.
+    company = _scoped_company(db, scope, company_id, bill_to_id, company_users=False)
     return program_tabs.report_library(
         db, company.id, bill_to_id=bill_to_id, state=state, q=q, limit=limit, offset=offset
     )

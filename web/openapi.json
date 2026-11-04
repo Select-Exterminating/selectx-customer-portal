@@ -1442,7 +1442,7 @@
           "dashboard"
         ],
         "summary": "Get Program Dashboard",
-        "description": "Program results, Store Watch, and the risk index, from findings. Select staff only:\nfindings are internal, so company users get 404 here (no company_id is passed).",
+        "description": "Program results, Store Watch, and the risk index, from findings.",
         "operationId": "dashboard-get_program_dashboard",
         "security": [
           {
@@ -1839,6 +1839,65 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AssessmentFindingPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{company_id}/stores/{location_id}/profile": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Store Profile",
+        "description": "One store's flyover. Reports are listed only for callers who can open them.",
+        "operationId": "dashboard-get_store_profile",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Location Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreProfile"
                 }
               }
             }
@@ -6491,6 +6550,38 @@
   },
   "components": {
     "schemas": {
+      "ActivityGrid": {
+        "properties": {
+          "months": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Months"
+          },
+          "rated": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Rated"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneMonths"
+            },
+            "type": "array",
+            "title": "Zones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "months",
+          "rated",
+          "zones"
+        ],
+        "title": "ActivityGrid"
+      },
       "ActivityMonth": {
         "properties": {
           "month": {
@@ -7084,6 +7175,103 @@
           "tier5"
         ],
         "title": "AssessmentZone"
+      },
+      "AssessmentZoneScore": {
+        "properties": {
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Areas"
+          },
+          "sanitation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sanitation"
+          },
+          "structural": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structural"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall"
+          },
+          "rodent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rodent"
+          },
+          "pest": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pest"
+          },
+          "pest_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Pest Types"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone",
+          "areas",
+          "sanitation",
+          "structural",
+          "overall",
+          "rodent",
+          "pest",
+          "pest_types",
+          "notes"
+        ],
+        "title": "AssessmentZoneScore"
       },
       "BillToCreate": {
         "properties": {
@@ -13746,6 +13934,678 @@
         ],
         "title": "PostedServiceOrderRead"
       },
+      "ProfileAssessment": {
+        "properties": {
+          "inspection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Inspection Id"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "inspector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "risk_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Index"
+          },
+          "sanitation_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sanitation Index"
+          },
+          "structural_index": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structural Index"
+          },
+          "max_zone": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Zone"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation"
+          },
+          "rodent_zones": {
+            "type": "integer",
+            "title": "Rodent Zones"
+          },
+          "pest_zones": {
+            "type": "integer",
+            "title": "Pest Zones"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentZoneScore"
+            },
+            "type": "array",
+            "title": "Zones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inspection_id",
+          "day",
+          "inspector",
+          "classification",
+          "risk_index",
+          "sanitation_index",
+          "structural_index",
+          "max_zone",
+          "recommendation",
+          "rodent_zones",
+          "pest_zones",
+          "zones"
+        ],
+        "title": "ProfileAssessment"
+      },
+      "ProfileFinding": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          },
+          "where": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where"
+          },
+          "issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "kind",
+          "category",
+          "zone",
+          "where",
+          "issue",
+          "status",
+          "severity"
+        ],
+        "title": "ProfileFinding"
+      },
+      "ProfileJourney": {
+        "properties": {
+          "first_visit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Visit"
+          },
+          "first_service": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Service"
+          },
+          "first_rated": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Rated"
+          },
+          "start_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Index"
+          },
+          "start_band": {
+            "type": "string",
+            "title": "Start Band"
+          },
+          "start_activity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Activity"
+          },
+          "last_rated": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Rated"
+          },
+          "now_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now Index"
+          },
+          "now_band": {
+            "type": "string",
+            "title": "Now Band"
+          },
+          "now_activity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now Activity"
+          },
+          "index_change": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index Change"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "stabilized_since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stabilized Since"
+          },
+          "first_stabilized": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Stabilized"
+          },
+          "days_to_stabilized": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days To Stabilized"
+          },
+          "recurrences": {
+            "type": "integer",
+            "title": "Recurrences"
+          },
+          "clean_from_start": {
+            "type": "boolean",
+            "title": "Clean From Start"
+          },
+          "cadence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cadence"
+          },
+          "cadence_why": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cadence Why"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "days_since_activity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Since Activity"
+          },
+          "first_monitoring": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Monitoring"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_visit",
+          "first_service",
+          "first_rated",
+          "start_index",
+          "start_band",
+          "start_activity",
+          "last_rated",
+          "now_index",
+          "now_band",
+          "now_activity",
+          "index_change",
+          "outcome",
+          "stabilized_since",
+          "first_stabilized",
+          "days_to_stabilized",
+          "recurrences",
+          "clean_from_start",
+          "cadence",
+          "cadence_why",
+          "last_activity",
+          "days_since_activity",
+          "first_monitoring"
+        ],
+        "title": "ProfileJourney",
+        "description": "Where a store started against where it is now. Dates that only the program tracker holds\n(requested, approved, abatement started) aren't known; first monitoring comes from orders."
+      },
+      "ProfileNumbers": {
+        "properties": {
+          "services": {
+            "type": "integer",
+            "title": "Services"
+          },
+          "inspections": {
+            "type": "integer",
+            "title": "Inspections"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          },
+          "activity_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Rate"
+          },
+          "activity_30d": {
+            "type": "integer",
+            "title": "Activity 30D"
+          },
+          "rated_30d": {
+            "type": "integer",
+            "title": "Rated 30D"
+          },
+          "structural_open": {
+            "type": "integer",
+            "title": "Structural Open"
+          },
+          "days_since_service": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Since Service"
+          }
+        },
+        "type": "object",
+        "required": [
+          "services",
+          "inspections",
+          "captures",
+          "activity_rate",
+          "activity_30d",
+          "rated_30d",
+          "structural_open",
+          "days_since_service"
+        ],
+        "title": "ProfileNumbers"
+      },
+      "ProfileReport": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "work_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Date"
+          },
+          "finalized_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalized On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "revision",
+          "work_date",
+          "finalized_on"
+        ],
+        "title": "ProfileReport"
+      },
+      "ProfileVisit": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "visit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visit Type"
+          },
+          "service": {
+            "type": "boolean",
+            "title": "Service"
+          },
+          "activity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity"
+          },
+          "technicians": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Technicians"
+          },
+          "captures": {
+            "type": "integer",
+            "title": "Captures"
+          },
+          "zones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "summaries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Summaries"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "visit_type",
+          "service",
+          "activity",
+          "technicians",
+          "captures",
+          "zones",
+          "evidence",
+          "summaries",
+          "report_id"
+        ],
+        "title": "ProfileVisit",
+        "description": "A visit: a location's worked orders on one date, merged."
+      },
       "ProgramDashboard": {
         "properties": {
           "company_id": {
@@ -13830,7 +14690,7 @@
           "stores"
         ],
         "title": "ProgramDashboard",
-        "description": "Program results for Select staff, worked out from worked orders and their findings."
+        "description": "Program results, worked out from worked orders and their findings."
       },
       "ProgramResults": {
         "properties": {
@@ -16208,6 +17068,34 @@
         ],
         "title": "RiskInspectionZoneRead"
       },
+      "RiskPoints": {
+        "properties": {
+          "activity": {
+            "type": "integer",
+            "title": "Activity"
+          },
+          "structural": {
+            "type": "integer",
+            "title": "Structural"
+          },
+          "sanitation": {
+            "type": "integer",
+            "title": "Sanitation"
+          },
+          "pests": {
+            "type": "integer",
+            "title": "Pests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity",
+          "structural",
+          "sanitation",
+          "pests"
+        ],
+        "title": "RiskPoints"
+      },
       "RodentActivityTab": {
         "properties": {
           "cohort": {
@@ -17153,6 +18041,212 @@
         ],
         "title": "StateCoverage"
       },
+      "StoreProfile": {
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Location Id"
+          },
+          "store_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "attention": {
+            "type": "string",
+            "title": "Attention"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/WatchFlag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "team_director": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Director"
+          },
+          "executive_team_director": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executive Team Director"
+          },
+          "numbers": {
+            "$ref": "#/components/schemas/ProfileNumbers"
+          },
+          "journey": {
+            "$ref": "#/components/schemas/ProfileJourney"
+          },
+          "risk_points": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskPoints"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "type": "array",
+            "title": "Trend"
+          },
+          "activity_grid": {
+            "$ref": "#/components/schemas/ActivityGrid"
+          },
+          "visits": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileVisit"
+            },
+            "type": "array",
+            "title": "Visits"
+          },
+          "open_structural": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileFinding"
+            },
+            "type": "array",
+            "title": "Open Structural"
+          },
+          "recent_concerns": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileFinding"
+            },
+            "type": "array",
+            "title": "Recent Concerns"
+          },
+          "assessments": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileAssessment"
+            },
+            "type": "array",
+            "title": "Assessments"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileReport"
+            },
+            "type": "array",
+            "title": "Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "store_number",
+          "name",
+          "address",
+          "city",
+          "state",
+          "as_of",
+          "tier",
+          "stage",
+          "attention",
+          "flags",
+          "team_director",
+          "executive_team_director",
+          "numbers",
+          "journey",
+          "risk_points",
+          "trend",
+          "activity_grid",
+          "visits",
+          "open_structural",
+          "recent_concerns",
+          "assessments",
+          "reports"
+        ],
+        "title": "StoreProfile",
+        "description": "Everything one store's flyover shows, in the RAMP portal's layout."
+      },
       "StoreRow": {
         "properties": {
           "location_id": {
@@ -17994,6 +19088,59 @@
         "title": "TrackerRow",
         "description": "A store's milestones, as far as worked orders show them. The steps before the work\n(requested, proposed, approved) aren't recorded anywhere we can read."
       },
+      "TrendPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "band": {
+            "type": "string",
+            "title": "Band"
+          },
+          "activity": {
+            "type": "string",
+            "title": "Activity"
+          },
+          "visit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visit Type"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "index",
+          "band",
+          "activity",
+          "visit_type",
+          "summary"
+        ],
+        "title": "TrendPoint"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -18548,6 +19695,32 @@
         ],
         "title": "Zone",
         "description": "The fixed set of restaurant zones that findings, areas, and dashboards group by: the\nzones of Maggiano's GoCanvas IPM form plus those of Chipotle's RiskGate form that don't fold\ninto them. Stored as these values (check constraints list them; changing the set needs a\nmigration)."
+      },
+      "ZoneMonths": {
+        "properties": {
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "levels": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Levels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone",
+          "total",
+          "levels"
+        ],
+        "title": "ZoneMonths"
       },
       "ZoneRead": {
         "properties": {

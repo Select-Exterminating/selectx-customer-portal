@@ -291,3 +291,20 @@ def test_deactivated_company_grants_nothing(client, world):
         client.get(f"/v1/companies/{world.company_a}/dashboard", headers=manager).status_code == 404
     )
     assert client.get("/v1/auth/me", headers=manager).json()["company_memberships"] == []
+
+
+@pytest.mark.parametrize(
+    "route",
+    ["program-dashboard", "program-tabs", "risk-assessment-dashboard", "risk-assessment-findings"],
+)
+def test_company_user_sees_findings_of_their_own_company_only(client, world, route):
+    manager = headers_for(client, world.emails["manager_a"])
+    admin = headers_for(client, world.emails["admin_a"])
+    sibling = client.post(
+        f"/v1/operators/{world.op_a}/companies", json={"name": "Sibling Co"}, headers=admin
+    )
+    assert sibling.status_code == 201
+    own = client.get(f"/v1/companies/{world.company_a}/{route}", headers=manager)
+    assert own.status_code == 200
+    other = client.get(f"/v1/companies/{sibling.json()['id']}/{route}", headers=manager)
+    assert other.status_code == 404

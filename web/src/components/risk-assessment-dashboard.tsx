@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { BAND_COLOR, day, Eyebrow, pct } from "@/components/program-overview";
+import { DataTable, DataTableFrame } from "@/components/data-table";
+import { StoreLink } from "@/components/dashboard-link";
+import { StatTile } from "@/components/stat-tile";
+import { BAND_COLOR, day, Eyebrow, pct, STATEMENT_BAND } from "@/components/program-overview";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +27,6 @@ const CLASS_COLOR: Record<string, string> = {
   Moderate: BAND_COLOR.Elevated,
   Low: BAND_COLOR.Controlled,
 };
-const TABLE_HEAD = "bg-muted text-left text-muted-foreground";
 const FINDINGS_PAGE = 50;
 
 type Scope = { companyId: string; billToId: string; state: string };
@@ -87,12 +88,9 @@ function SimpleCard({
 function StoreCell({ s }: { s: AssessedStore }) {
   return (
     <>
-      <Link
-        href={`/risk-inspections/${s.inspection_id}`}
-        className="font-medium text-primary hover:underline"
-      >
+      <StoreLink locationId={s.location_id} className="font-medium">
         {s.store_number ? `#${s.store_number}` : s.name}
-      </Link>
+      </StoreLink>
       <span className="block text-xs text-muted-foreground">
         {[s.store_number ? s.name : null, s.city, s.state].filter(Boolean).join(" · ")}
       </span>
@@ -103,12 +101,12 @@ function StoreCell({ s }: { s: AssessedStore }) {
 function ZoneDrivers({ d }: { d: RiskAssessmentDashboard }) {
   return (
     <SimpleCard
-      title="Key risk drivers by zone"
+      title="Key Risk Drivers by Zone"
       description="Latest assessment per restaurant. Zones are scored 1 (low) to 5 (critical), ranked by rodent activity."
     >
-      <div className="overflow-x-auto border border-border">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead className={TABLE_HEAD}>
+      <DataTableFrame>
+        <DataTable className="min-w-[760px]">
+          <thead>
             <tr>
               <th className="p-3 font-medium">Zone</th>
               <th className="p-3 text-right font-medium">Inspected</th>
@@ -134,8 +132,8 @@ function ZoneDrivers({ d }: { d: RiskAssessmentDashboard }) {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
+      </DataTableFrame>
     </SimpleCard>
   );
 }
@@ -159,7 +157,7 @@ function StoreTable({ d }: { d: RiskAssessmentDashboard }) {
   const shown = all ? rows : rows.slice(0, 25);
   return (
     <SimpleCard
-      title="Store inspection summary"
+      title="Store Inspection Summary"
       description="Every assessed restaurant with its latest result. Open a store for the full zone-by-zone assessment."
     >
       <div className="flex flex-col gap-3">
@@ -216,9 +214,9 @@ function StoreTable({ d }: { d: RiskAssessmentDashboard }) {
             {integer.format(rows.length)} of {integer.format(d.stores.length)} stores
           </p>
         </div>
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className={TABLE_HEAD}>
+        <DataTableFrame>
+          <DataTable className="min-w-[820px]">
+            <thead>
               <tr>
                 <th className="p-3 font-medium">Store</th>
                 <th className="p-3 font-medium">Assessed</th>
@@ -255,8 +253,8 @@ function StoreTable({ d }: { d: RiskAssessmentDashboard }) {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataTableFrame>
         {rows.length > 25 && (
           <Button variant="outline" className="self-center" onClick={() => setAll(!all)}>
             {all ? "Show fewer" : `Show all ${integer.format(rows.length)} stores`}
@@ -284,7 +282,7 @@ function Findings({ scope }: { scope: Scope }) {
   const pages = data ? Math.ceil(data.total / FINDINGS_PAGE) : 0;
   return (
     <SimpleCard
-      title="Detailed inspection findings"
+      title="Detailed Inspection Findings"
       description="Every written finding from the assessments, zone by zone, newest first."
     >
       <div className="flex flex-col gap-3">
@@ -352,9 +350,9 @@ function Findings({ scope }: { scope: Scope }) {
             </AlertDescription>
           </Alert>
         )}
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className={TABLE_HEAD}>
+        <DataTableFrame>
+          <DataTable className="min-w-[720px]">
+            <thead>
               <tr>
                 <th className="p-3 font-medium">Store</th>
                 <th className="p-3 font-medium">Date</th>
@@ -367,12 +365,9 @@ function Findings({ scope }: { scope: Scope }) {
               {(data?.items ?? []).map((f, i) => (
                 <tr key={`${f.inspection_id}-${f.zone}-${f.kind}-${i}`} className="align-top">
                   <td className="p-3 whitespace-nowrap">
-                    <Link
-                      href={`/risk-inspections/${f.inspection_id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
+                    <StoreLink locationId={f.location_id} className="font-medium">
                       {f.store_number ? `#${f.store_number}` : f.name}
-                    </Link>
+                    </StoreLink>
                   </td>
                   <td className="p-3 whitespace-nowrap">{day(f.assessed_on)}</td>
                   <td className="p-3">{f.zone}</td>
@@ -381,8 +376,8 @@ function Findings({ scope }: { scope: Scope }) {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataTableFrame>
         {pages > 1 && (
           <div className="flex items-center justify-center gap-3 text-sm">
             <Button variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>
@@ -462,39 +457,32 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
   );
   return (
     <div className="flex flex-col gap-6">
-      <section className="bg-ink px-6 py-8 text-white sm:px-8">
-        <Eyebrow className="text-highlight">Risk assessments</Eyebrow>
+      <section className={STATEMENT_BAND}>
+        <Eyebrow className="text-brand-green">Risk assessments</Eyebrow>
         <h2 className="mt-3 max-w-4xl text-2xl leading-snug sm:text-3xl">
           An x-ray of every restaurant
         </h2>
-        <div aria-hidden className="mt-4 h-1 w-16 bg-highlight" />
-        <p className="mt-4 max-w-3xl text-sm">
+        <p className="mt-3 max-w-3xl text-sm text-ink-muted">
           Each assessment walks the restaurant zone by zone and scores rodent activity, pest
           activity, structural integrity, and sanitation from 1 (low) to 5 (critical).{" "}
-          {integer.format(d.assessments)} assessments, {day(d.first)} to {day(d.last)}, from
-          GoCanvas.
+          {integer.format(d.assessments)} assessments, {day(d.first)} to {day(d.last)}.
           {d.unlinked > 0 &&
-            ` ${integer.format(d.unlinked)} more aren't matched to a store and aren't counted.`}
+            ` ${integer.format(d.unlinked)} more aren't linked to a store yet, so they aren't counted.`}
         </p>
       </section>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map(([value, label, note]) => (
-          <div key={label} className="border border-border bg-card p-4">
-            <dt className="sr-only">{label}</dt>
-            <dd className="font-heading text-3xl font-bold">{value}</dd>
-            <dd className="text-sm font-bold">{label}</dd>
-            <dd className="text-xs text-muted-foreground">{note}</dd>
-          </div>
+          <StatTile key={label} label={label} value={value} note={note} />
         ))}
       </dl>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <SimpleCard
-          title="Risk by market"
+          title="Risk by Market"
           description="Assessed against every location in the state, latest assessment per restaurant."
         >
-          <div className="overflow-x-auto border border-border">
-            <table className="w-full text-sm">
-              <thead className={TABLE_HEAD}>
+          <DataTableFrame>
+            <DataTable>
+              <thead>
                 <tr>
                   <th className="p-3 font-medium">State</th>
                   <th className="p-3 text-right font-medium">Assessed</th>
@@ -516,10 +504,10 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
+          </DataTableFrame>
         </SimpleCard>
-        <SimpleCard title="Classification and recommendation" description="Latest per restaurant.">
+        <SimpleCard title="Classification and Recommendation" description="Latest per restaurant.">
           <div className="flex flex-col gap-4">
             <Bars
               rows={CLASSES.map((c) => ({
@@ -542,7 +530,7 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
       <ZoneDrivers d={d} />
       <div className="grid gap-6 lg:grid-cols-2">
         <SimpleCard
-          title="Site conditions"
+          title="Site Conditions"
           description="Building characteristics recorded at the latest assessment."
         >
           <dl className="flex flex-col gap-3 text-sm">
@@ -557,15 +545,15 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
           </dl>
         </SimpleCard>
         <SimpleCard
-          title="Re-assessments: is risk moving?"
+          title="Re-assessments: Is Risk Moving?"
           description="Restaurants assessed more than once, first vs. latest risk index, most worsening first."
         >
           {repeats.length === 0 ? (
             <p className="text-sm text-muted-foreground">No restaurant re-assessed yet.</p>
           ) : (
-            <div className="max-h-96 overflow-auto border border-border">
-              <table className="w-full text-sm">
-                <thead className={TABLE_HEAD}>
+            <DataTableFrame className="max-h-96">
+              <DataTable>
+                <thead>
                   <tr>
                     <th className="p-3 font-medium">Store</th>
                     <th className="p-3 text-right font-medium">First → latest</th>
@@ -588,8 +576,8 @@ export function RiskAssessmentsTabView({ scope }: { scope: Scope }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
+            </DataTableFrame>
           )}
         </SimpleCard>
       </div>
