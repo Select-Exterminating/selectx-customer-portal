@@ -308,6 +308,12 @@ def _inspected_at(date: str | None, time: str | None) -> datetime | None | str:
         return raw
 
 
+_WORK_ORDER_WORDS = r"(?:insp\w*(?:\s+of)?|(?:risk\s+)?assessment)"
+_WORK_ORDER_STORE_NUMBER = re.compile(
+    rf"(?:{_WORK_ORDER_WORDS}\s+)?(\d+)(?:\s+{_WORK_ORDER_WORDS})?", re.IGNORECASE
+)
+
+
 def _store_number(label: str | None) -> str | None:
     match = re.search(r"#\s*(\d+)", label or "")
     return match.group(1) if match else None
@@ -660,8 +666,13 @@ def _parse_summary(summary: dict, warnings: _Warnings) -> RiskInspectionSummary:
 
 def _link(db: Session, submission: InspectionSubmission) -> None:
     """Link the service order by the work order number (a PestPac order number), and the
-    location through it; else the location whose name ends with the store number; else the one
-    location at the address (Sweetgreen's have no store numbers)."""
+    location through it; else the location whose name ends with the store number the form names,
+    or else the one typed in the work order; else the one location at the address.
+
+    Only Chipotle's stores have numbers. Sweetgreen's are found by address, so the address is
+    tried only when the form names no store number: one that matches nothing (an inspector who
+    picked another customer's "Loc #304851") stays unlinked rather than following that address.
+    """
     submission.service_order_id = None
     submission.location_id = None
     ref = submission.work_order_ref or ""
@@ -675,18 +686,15 @@ def _link(db: Session, submission: InspectionSubmission) -> None:
         if order is not None:
             submission.service_order_id = order.id
             submission.location_id = order.location_id
-    if submission.location_id is None and submission.store_number:
-        matches = db.scalars(
-            select(Location.id)
-            .where(
-                Location.operator_id == submission.operator_id,
-                func.upper(Location.pestpac_company).like(f"%#{submission.store_number}"),
-            )
-            .limit(2)
-        ).all()
-        if len(matches) == 1:
-            submission.location_id = matches[0]
-    if submission.location_id is None and submission.address and submission.city:
+    for number in (submission.store_number, _store_number_in_work_order(ref)):
+        if submission.location_id is None and number:
+            submission.location_id = _location_by_store_number(db, submission, number)
+    if (
+        submission.location_id is None
+        and not submission.store_number
+        and submission.address
+        and submission.city
+    ):
         matches = db.scalars(
             select(Location.id)
             .where(
@@ -699,3 +707,42 @@ def _link(db: Session, submission: InspectionSubmission) -> None:
         ).all()
         if len(matches) == 1:
             submission.location_id = matches[0]
+
+
+def _store_number_in_work_order(ref: str) -> str | None:
+    """A store number typed in the Work Order ID: after a "#", or alone or beside the words
+    inspectors use. Any other bare number may be a street number ("116 Andrew Dr")."""
+    bare = _WORK_ORDER_STORE_NUMBER.fullmatch(ref.strip())
+    return _store_number(ref) or (bare.group(1) if bare else None)
+
+
+def _location_by_store_number(
+    db: Session, submission: InspectionSubmission, number: str
+) -> uuid.UUID | None:
+    matches = db.scalars(
+        select(Location.id)
+        .where(
+            Location.operator_id == submission.operator_id,
+            func.upper(Location.pestpac_company).like(f"%#{number}"),
+        )
+        .limit(2)
+    ).all()
+    return matches[0] if len(matches) == 1 else None
+
+
+def relink_submissions(
+    db: Session, operator_id: uuid.UUID
+) -> list[tuple[InspectionSubmission, uuid.UUID | None]]:
+    """Apply the linking rules to the operator's stored submissions, moving photos with them.
+    Returns each submission whose location or order changed, with its previous location."""
+    changed = []
+    for submission in db.scalars(
+        select(InspectionSubmission).where(InspectionSubmission.operator_id == operator_id)
+    ):
+        location_id, order_id = submission.location_id, submission.service_order_id
+        _link(db, submission)
+        if (submission.location_id, submission.service_order_id) != (location_id, order_id):
+            changed.append((submission, location_id))
+            if submission.location_id != location_id:
+                _sync_file_companies(db, submission)
+    return changed
