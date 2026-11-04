@@ -494,6 +494,20 @@ CASES = [
         lambda w: {"location_id": str(w.location_a)},
     ),
     Case(
+        "log a client finding at location A",
+        "POST",
+        lambda w: f"/v1/locations/{w.location_a}/client-findings",
+        _all(404, platform_admin=201, admin_a=201, staff_a=403),
+        lambda w: {"source": "Store team", "finding": "Droppings", "severity": "high"},
+    ),
+    Case(
+        "update client finding A",
+        "PUT",
+        lambda w: f"/v1/client-findings/{w.client_finding_a}",
+        _all(404, platform_admin=200, admin_a=200, staff_a=403),
+        lambda w: {"source": "Store team", "finding": "Droppings", "severity": "high"},
+    ),
+    Case(
         "get stored file of company A",
         "GET",
         lambda w: f"/v1/files/{w.file_a}",
@@ -753,6 +767,7 @@ _PLACEHOLDER_WORLD = World(
     document_a="{document_id}",  # type: ignore[arg-type]
     file_a="{file_id}",  # type: ignore[arg-type]
     risk_inspection_a="{inspection_id}",  # type: ignore[arg-type]
+    client_finding_a="{finding_id}",  # type: ignore[arg-type]
     area_type_a="{area_type_id}",  # type: ignore[arg-type]
     report_a="{report_id}",  # type: ignore[arg-type]
     report_final_a="{report_id}",  # type: ignore[arg-type]

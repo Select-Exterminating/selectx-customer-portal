@@ -4,6 +4,7 @@ from app.api.v1 import (
     area_mapping,
     auth,
     bill_tos,
+    client_findings,
     companies,
     contacts,
     dashboard,
@@ -47,6 +48,7 @@ router.include_router(gocanvas_connection.router)
 router.include_router(reports.router)
 router.include_router(service_reports.router)
 router.include_router(risk_inspections.router)
+router.include_router(client_findings.router)
 router.include_router(roles.router)
 router.include_router(search.router)
 router.include_router(webhooks.router)
