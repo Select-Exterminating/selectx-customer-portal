@@ -5,7 +5,7 @@ Written 2026-11-01. Compares each tab of the RAMP portal (`../select-ramp-portal
 | Tab | Status | What's missing |
 |---|---|---|
 | Overview | Built | Rollout funnel (needs tracker data). Program-phase filter on Store Watch. |
-| Executive Review | Mostly built, from live data | Building-type outcomes, the six-month question, recurrence drivers, the partnership timeline and committed portfolio, ceiling and front-line deep dives. Present mode isn't built. |
+| Executive Review | Mostly built, from live data | Building-type outcomes, the partnership timeline and committed portfolio. The six-month question counts from the first RAMP order, since the tracker's Phase 2 dates aren't held. Condition ownership uses PestPac's responsibility field, not the Account Review's log. |
 | Risk Assessments | Built | Rodent notes as a finding type: GoCanvas records rodent activity as yes or no with no notes field of its own. |
 | Store Tracker | Partly built, derived from orders | Launch, inspection requested, proposal submitted, approved, Romeo 2, entomology walk, phase 1 and 2 dates, completed, notes. |
 | Rodent Activity | Built | Nothing. |
@@ -23,7 +23,7 @@ The store flyover is built too. It doesn't show: tracker dates (inspection reque
 |---|---|---|---|
 | Program enrollment and milestones | Store Tracker, rollout funnel, program-phase filter, six-month question | `Chipotle_RAMP_Store_Tracker.csv`, maintained by hand, 127 stores | Add `programs` and `program_enrollments`, import the sheet once, then edit in the app (`dashboard-data-plan.md` D5) |
 | Chipotle's priority risk lists | Risk Model chart and table | Two customer spreadsheets (`Rodent_Risk_Assessment_Tekashi_34.csv`, `_66.csv`) | Import per company (D7); a current copy is needed from Chipotle |
-| Real estate type and sub-region | Building-type outcomes, recurrence drivers, Stores columns | Restaurant Leader Report, not all columns imported | Extend `app.import_leader_report` (D6) |
+| Real estate type and sub-region | Building-type outcomes, Stores columns | Restaurant Leader Report, not all columns imported | Extend `app.import_leader_report` (D6) |
 | Drive documents | Past service reports in the Reports tab, if wanted | Shared Google Drive, about 2,660 files | Import from Drive, or link to the folders |
 | Partnership facts | Executive Review timeline, committed portfolio | Written by hand into the portal's `exec.js` | Decide whether these belong in the app at all; they're narrative, not data |
 

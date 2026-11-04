@@ -823,7 +823,7 @@ function PortfolioToday({ d }: { d: ProgramDashboard }) {
   );
 }
 
-function AssessmentCoverage({
+export function AssessmentCoverage({
   companyId,
   billToId,
   state,
