@@ -72,6 +72,19 @@ CASES = [
         _all(404, platform_admin=200, admin_a=200, staff_a=200, manager_a=200),
     ),
     Case(
+        "get assessment targets of company A",
+        "GET",
+        lambda w: f"/v1/companies/{w.company_a}/assessment-targets",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "set assessment targets of company A",
+        "PUT",
+        lambda w: f"/v1/companies/{w.company_a}/assessment-targets",
+        _all(404, platform_admin=200, admin_a=200, staff_a=403),
+        lambda w: {"targets": [{"state": "NY", "total": 10}]},
+    ),
+    Case(
         "update company A",
         "PATCH",
         lambda w: f"/v1/companies/{w.company_a}",

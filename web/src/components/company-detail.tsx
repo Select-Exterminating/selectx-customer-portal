@@ -8,6 +8,7 @@ import { useEffect } from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddDialog } from "@/components/add-dialog";
+import { AssessmentTargetsPanel } from "@/components/assessment-targets-panel";
 import { BillToDetailLines, OnboardBillTo } from "@/components/bill-to-onboarding";
 import { LocationSyncResult } from "@/components/location-sync-result";
 import { InvoicedOrders } from "@/components/invoiced-orders";
@@ -38,7 +39,17 @@ import { useUrlTab } from "@/lib/use-url-tab";
 export function CompanyDetail() {
   const { companyId } = useParams<{ companyId: string }>();
   const [tab, setTab] = useUrlTab(
-    ["bill-tos", "locations", "posted", "invoiced", "open", "risk", "templates", "members"],
+    [
+      "bill-tos",
+      "locations",
+      "posted",
+      "invoiced",
+      "open",
+      "risk",
+      "targets",
+      "templates",
+      "members",
+    ],
     "bill-tos",
   );
   const queryClient = useQueryClient();
@@ -132,6 +143,7 @@ export function CompanyDetail() {
           )}
           <TabsTrigger value="open">Open Orders</TabsTrigger>
           <TabsTrigger value="risk">Risk Inspections</TabsTrigger>
+          <TabsTrigger value="targets">Assessment Targets</TabsTrigger>
           {can("reports:read", c.operator_id) && (
             <TabsTrigger value="templates">Report Templates</TabsTrigger>
           )}
@@ -249,6 +261,12 @@ export function CompanyDetail() {
         </TabsContent>
         <TabsContent value="risk" className="pt-4">
           <CompanyRiskInspections companyId={companyId} companyName={c.name} />
+        </TabsContent>
+        <TabsContent value="targets" className="pt-4">
+          <AssessmentTargetsPanel
+            companyId={companyId}
+            canWrite={can("companies:write", c.operator_id)}
+          />
         </TabsContent>
         {can("reports:read", c.operator_id) && (
           <TabsContent value="templates" className="pt-4">

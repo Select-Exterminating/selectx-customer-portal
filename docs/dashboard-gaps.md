@@ -6,7 +6,7 @@ Written 2026-11-01. Compares each tab of the RAMP portal (`../select-ramp-portal
 |---|---|---|
 | Overview | Built | Rollout funnel (needs tracker data). Program-phase filter on Store Watch. Client-reported findings flag. |
 | Executive Review | Mostly built, from live data | Building-type outcomes, the six-month question, recurrence drivers, the partnership timeline and committed portfolio, ceiling and front-line deep dives. Present mode isn't built. |
-| Risk Assessments | Built | Map of assessed stores (a table by market stands in). Rodent notes as a finding type: GoCanvas records rodent activity as yes or no with no notes field of its own. |
+| Risk Assessments | Built | Rodent notes as a finding type: GoCanvas records rodent activity as yes or no with no notes field of its own. |
 | Store Tracker | Partly built, derived from orders | Launch, inspection requested, proposal submitted, approved, Romeo 2, entomology walk, phase 1 and 2 dates, completed, notes. |
 | Rodent Activity | Built | Nothing. |
 | Structural | Built | Nothing. Remediation is only as good as the notes: a repair that nobody writes down stays open. |

@@ -2041,6 +2041,112 @@
         }
       }
     },
+    "/v1/companies/{company_id}/assessment-targets": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Assessment Targets",
+        "description": "How many of the company's restaurants in each state its risk assessments cover.",
+        "operationId": "dashboard-get_assessment_targets",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentTargets"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Put Assessment Targets",
+        "description": "Replace the company's targets. A state left out has no target.",
+        "operationId": "dashboard-put_assessment_targets",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentTargets"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentTargets"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/bill-tos/{bill_to_id}": {
       "get": {
         "tags": [
@@ -7272,6 +7378,43 @@
           "zones"
         ],
         "title": "AssessmentFindingPage"
+      },
+      "AssessmentTargetRow": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "State"
+          },
+          "total": {
+            "type": "integer",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "total"
+        ],
+        "title": "AssessmentTargetRow"
+      },
+      "AssessmentTargets": {
+        "properties": {
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentTargetRow"
+            },
+            "type": "array",
+            "title": "Targets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targets"
+        ],
+        "title": "AssessmentTargets"
       },
       "AssessmentZone": {
         "properties": {
@@ -18323,6 +18466,17 @@
             "type": "integer",
             "title": "In Program"
           },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
           "assessed": {
             "type": "integer",
             "title": "Assessed"
@@ -18351,6 +18505,7 @@
         "required": [
           "state",
           "in_program",
+          "target",
           "assessed",
           "avg_index",
           "high_or_critical",

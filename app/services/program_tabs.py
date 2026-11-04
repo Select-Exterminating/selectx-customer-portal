@@ -12,11 +12,13 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    AssessmentTarget,
     BillTo,
+    Company,
     InspectionFinding,
     InspectionFindingItem,
     InspectionForm,
@@ -35,6 +37,7 @@ from app.schemas.program_tabs import (
     AssessedStore,
     AssessmentFinding,
     AssessmentFindingPage,
+    AssessmentTargetRow,
     AssessmentZone,
     Breakdown,
     CohortPoint,
@@ -617,6 +620,28 @@ def _mean(values: list[int]) -> float | None:
     return round(statistics.fmean(values), 2) if values else None
 
 
+def assessment_targets(db: Session, company_id: uuid.UUID) -> list[AssessmentTargetRow]:
+    return [
+        AssessmentTargetRow(state=t.state, total=t.total)
+        for t in db.scalars(
+            select(AssessmentTarget)
+            .where(AssessmentTarget.company_id == company_id)
+            .order_by(AssessmentTarget.state)
+        )
+    ]
+
+
+def set_assessment_targets(db: Session, company: Company, rows: list[AssessmentTargetRow]) -> None:
+    """Replace the company's targets."""
+    db.execute(delete(AssessmentTarget).where(AssessmentTarget.company_id == company.id))
+    db.add_all(
+        AssessmentTarget(
+            operator_id=company.operator_id, company_id=company.id, state=r.state, total=r.total
+        )
+        for r in rows
+    )
+
+
 def risk_assessment_dashboard(
     db: Session,
     company_id: uuid.UUID,
@@ -713,6 +738,18 @@ def risk_assessment_dashboard(
     zone_rows.sort(key=lambda z: (-z.rodent_rate, -(z.avg_overall or 0)))
 
     in_state = Counter(loc.state or "—" for loc in locations)
+    # Targets cover the whole company, so one bill-to's view has none.
+    targets = (
+        {}
+        if bill_to_id
+        else {
+            t.state: t.total
+            for t in db.scalars(
+                select(AssessmentTarget).where(AssessmentTarget.company_id == company_id)
+            )
+            if not state or t.state == state
+        }
+    )
     by_state: dict[str, list[AssessedStore]] = defaultdict(list)
     for s in stores:
         by_state[s.state or "—"].append(s)
@@ -720,6 +757,7 @@ def risk_assessment_dashboard(
         StateCoverage(
             state=st,
             in_program=total,
+            target=targets.get(st),
             assessed=len(by_state[st]),
             avg_index=_mean([s.risk_index for s in by_state[st] if s.risk_index is not None]),
             high_or_critical=sum(
@@ -727,7 +765,10 @@ def risk_assessment_dashboard(
             ),
             with_rodents=sum(1 for s in by_state[st] if s.rodent_zones),
         )
-        for st, total in in_state.most_common()
+        for st, total in [
+            *in_state.most_common(),
+            *((st, 0) for st in sorted(targets) if st not in in_state),
+        ]
     ]
     dates = [sub.inspected_at.date() for sub, _ in rows if sub.inspected_at]
     unlinked = (

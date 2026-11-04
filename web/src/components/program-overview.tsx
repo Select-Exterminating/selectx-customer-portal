@@ -830,12 +830,12 @@ function AssessmentCoverage({
   const data = (assessments.data?.data.coverage ?? []).map((c) => ({
     state: c.state,
     assessed: c.assessed,
-    remaining: Math.max(0, c.in_program - c.assessed),
+    remaining: Math.max(0, (c.target ?? c.in_program) - c.assessed),
   }));
   return (
     <ChartCard
       title="Risk Assessment Coverage"
-      description="Locations with a risk assessment, assessed vs. remaining, by state."
+      description="Restaurants with a risk assessment, against the state's target or every location there."
       rows={data.map((c) => [c.state, `${c.assessed} of ${c.assessed + c.remaining}`])}
     >
       <ChartContainer config={coverageConfig} className="aspect-auto h-64 w-full">

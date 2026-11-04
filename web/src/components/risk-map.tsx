@@ -19,11 +19,20 @@ const PAD = 24;
 // Draw the riskiest stores last, so they sit on top.
 const BAND_ORDER: Record<string, number> = {
   "No Service Data": 0,
+  "Not Scored": 0,
   Controlled: 1,
+  Low: 1,
   Elevated: 2,
+  Moderate: 2,
   High: 3,
   Critical: 4,
 };
+
+/** What a dot needs. `services` is left out of a map of stores that aren't all serviced. */
+type MapStore = Pick<
+  StoreWatchRow,
+  "location_id" | "store_number" | "name" | "city" | "latitude" | "longitude" | "risk_band"
+> & { risk_index?: number | null; attention?: string; services?: number };
 
 type States = ExtendedFeatureCollection<{
   type: "Feature";
@@ -57,20 +66,22 @@ function useStates(): { states: States | null; failed: boolean } {
 
 /** Coordinates in or near the US. PestPac holds some that aren't (0,0, one in Australia), and one of
  * those would zoom the map out to the whole world. */
-function onUsMap(s: StoreWatchRow) {
+function onUsMap(s: MapStore) {
   const { latitude: lat, longitude: lng } = s;
   return lat !== null && lng !== null && lat > 18 && lat < 72 && lng > -170 && lng < -60;
 }
 
 /** One dot per store, colored by its risk band, on state outlines fitted to the serviced stores (or
  * to them all, when none is), as tall as they need so the map fills its card. Clicking a dot opens
- * the store. */
+ * the store's page, or does `onSelect` instead. */
 export function RiskMap({
   stores,
   bandColor,
+  onSelect,
 }: {
-  stores: StoreWatchRow[];
+  stores: MapStore[];
   bandColor: Record<string, string>;
+  onSelect?: (locationId: string) => void;
 }) {
   const router = useRouter();
   const { states, failed } = useStates();
@@ -84,7 +95,7 @@ export function RiskMap({
   const unmapped = stores.filter((s) => !onUsMap(s));
   const { projection, height } = useMemo(() => {
     if (points.length === 0) return { projection: null, height: MIN_HEIGHT };
-    const serviced = points.filter((s) => s.services > 0);
+    const serviced = points.filter((s) => (s.services ?? 1) > 0);
     const multipoint: GeoGeometryObjects = {
       type: "MultiPoint",
       coordinates: (serviced.length > 0 ? serviced : points).map((s) => [
@@ -152,13 +163,15 @@ export function RiskMap({
               stroke="var(--background)"
               strokeWidth={1.2}
               className="cursor-pointer"
-              onClick={() => router.push(`/locations/${s.location_id}`)}
+              onClick={() =>
+                onSelect ? onSelect(s.location_id) : router.push(`/locations/${s.location_id}`)
+              }
             >
               <title>
                 {[
                   s.store_number ? `#${s.store_number}` : s.name,
                   s.city,
-                  `${s.risk_band}${s.risk_index === null ? "" : ` (${s.risk_index})`}`,
+                  `${s.risk_band}${s.risk_index == null ? "" : ` (${s.risk_index})`}`,
                   s.attention,
                 ]
                   .filter(Boolean)

@@ -5,22 +5,27 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   AssessmentFindingPage,
+  AssessmentTargets,
   CompanyDashboard,
   DashboardGetCompanyDashboardParams,
   DashboardGetProgramDashboardParams,
@@ -978,3 +983,227 @@ export function useDashboardGetReportLibrary<TData = Awaited<ReturnType<typeof d
 
 
 
+export type dashboardGetAssessmentTargetsResponse200 = {
+  data: AssessmentTargets
+  status: 200
+}
+
+export type dashboardGetAssessmentTargetsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardGetAssessmentTargetsResponseSuccess = (dashboardGetAssessmentTargetsResponse200) & {
+  headers: Headers;
+};
+export type dashboardGetAssessmentTargetsResponseError = (dashboardGetAssessmentTargetsResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardGetAssessmentTargetsUrl = (companyId: string,) => {
+
+
+
+
+  return `/v1/companies/${companyId}/assessment-targets`
+}
+
+/**
+ * How many of the company's restaurants in each state its risk assessments cover.
+ * @summary Get Assessment Targets
+ */
+export const dashboardGetAssessmentTargets = async (companyId: string, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardGetAssessmentTargetsResponseSuccess> => {
+
+  return bffFetch<dashboardGetAssessmentTargetsResponseSuccess>(getDashboardGetAssessmentTargetsUrl(companyId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDashboardGetAssessmentTargetsQueryKey = (companyId: string,) => {
+    return [
+    `/v1/companies/${companyId}/assessment-targets`
+    ] as const;
+    }
+
+
+export const getDashboardGetAssessmentTargetsQueryOptions = <TData = Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError = HTTPValidationError>(companyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDashboardGetAssessmentTargetsQueryKey(companyId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>> = ({ signal }) => dashboardGetAssessmentTargets(companyId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: companyId !== null && companyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DashboardGetAssessmentTargetsQueryResult = NonNullable<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>>
+export type DashboardGetAssessmentTargetsQueryError = HTTPValidationError
+
+
+export function useDashboardGetAssessmentTargets<TData = Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError = HTTPValidationError>(
+ companyId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetAssessmentTargets<TData = Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError = HTTPValidationError>(
+ companyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>,
+          TError,
+          Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboardGetAssessmentTargets<TData = Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError = HTTPValidationError>(
+ companyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Assessment Targets
+ */
+
+export function useDashboardGetAssessmentTargets<TData = Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError = HTTPValidationError>(
+ companyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboardGetAssessmentTargets>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDashboardGetAssessmentTargetsQueryOptions(companyId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type dashboardPutAssessmentTargetsResponse200 = {
+  data: AssessmentTargets
+  status: 200
+}
+
+export type dashboardPutAssessmentTargetsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type dashboardPutAssessmentTargetsResponseSuccess = (dashboardPutAssessmentTargetsResponse200) & {
+  headers: Headers;
+};
+export type dashboardPutAssessmentTargetsResponseError = (dashboardPutAssessmentTargetsResponse422) & {
+  headers: Headers;
+};
+
+export const getDashboardPutAssessmentTargetsUrl = (companyId: string,) => {
+
+
+
+
+  return `/v1/companies/${companyId}/assessment-targets`
+}
+
+/**
+ * Replace the company's targets. A state left out has no target.
+ * @summary Put Assessment Targets
+ */
+export const dashboardPutAssessmentTargets = async (companyId: string,
+    assessmentTargets: AssessmentTargets, options?: Parameters<typeof bffFetch>[1]): Promise<dashboardPutAssessmentTargetsResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bffFetch<dashboardPutAssessmentTargetsResponseSuccess>(getDashboardPutAssessmentTargetsUrl(companyId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(assessmentTargets)
+  }
+);}
+
+
+
+
+
+export const getDashboardPutAssessmentTargetsMutationKey = () => ['dashboardPutAssessmentTargets'] as const;
+
+export const getDashboardPutAssessmentTargetsMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>, TError,DashboardPutAssessmentTargetsMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>, TError,DashboardPutAssessmentTargetsMutationVariables, TContext> => {
+
+const mutationKey = getDashboardPutAssessmentTargetsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>, DashboardPutAssessmentTargetsMutationVariables> = (props) => {
+          const {companyId,data} = props ?? {};
+
+          return  dashboardPutAssessmentTargets(companyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DashboardPutAssessmentTargetsMutationResult = NonNullable<Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>>
+    export type DashboardPutAssessmentTargetsMutationBody = AssessmentTargets
+    export type DashboardPutAssessmentTargetsMutationError = HTTPValidationError
+    export type DashboardPutAssessmentTargetsMutationVariables = {companyId: string;data: AssessmentTargets}
+
+    /**
+ * @summary Put Assessment Targets
+ */
+export const useDashboardPutAssessmentTargets = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>, TError,DashboardPutAssessmentTargetsMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof dashboardPutAssessmentTargets>>,
+        TError,
+        DashboardPutAssessmentTargetsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDashboardPutAssessmentTargetsMutationOptions(options), queryClient);
+    }
