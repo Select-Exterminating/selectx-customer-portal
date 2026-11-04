@@ -32,6 +32,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.customer import Location
 from app.models.file import StoredFile
+from app.models.user import User
 
 
 class InspectionKind(enum.StrEnum):
@@ -177,6 +178,11 @@ class InspectionSubmission(Base):
     address: Mapped[str | None] = mapped_column(String(300))
     city: Mapped[str | None] = mapped_column(String(100))
     work_order_ref: Mapped[str | None] = mapped_column(String(100))
+    # Set when someone chose the store by hand: automatic linking then leaves the store alone.
+    location_linked_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    location_linked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     raw_payload: Mapped[dict] = mapped_column(JSONB)
     payload_sha256: Mapped[str] = mapped_column(String(64))
@@ -188,6 +194,7 @@ class InspectionSubmission(Base):
 
     form: Mapped[InspectionForm] = relationship()
     location: Mapped[Location | None] = relationship()
+    location_linked_by: Mapped[User | None] = relationship()
     responses: Mapped[list[InspectionResponse]] = relationship(
         back_populates="submission",
         cascade="all, delete-orphan",

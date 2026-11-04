@@ -19,7 +19,9 @@ from app.db.session import SessionLocal
 from app.models import InspectionKind, InspectionSubmission, Location, ServiceOrder
 from app.services.inspections import (
     InspectionError,
+    choose_location,
     import_form,
+    relink_submissions,
     split_options,
     store_submission,
 )
@@ -562,6 +564,55 @@ def test_relink_applies_the_rules_to_stored_submissions(world, caplog):
     assert relink_inspections.main(["--operator-id", str(world.op_b)]) == 0
     with SessionLocal() as db:
         assert db.get(InspectionSubmission, submission_id).location_id == world.location_a
+
+
+def _second_location(db, world, name: str = "OTHER - STORE #2") -> Location:
+    location_a = db.get(Location, world.location_a)
+    other = Location(
+        operator_id=world.op_a,
+        bill_to_id=world.bill_to_a,
+        pestpac_location_id=800997,
+        pestpac_fetched_at=location_a.pestpac_fetched_at,
+        pestpac_company=name,
+    )
+    db.add(other)
+    db.flush()
+    return other
+
+
+def test_a_chosen_store_survives_revisions_and_relinks(world):
+    with SessionLocal() as db:
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        order = db.get(ServiceOrder, world.service_order_a)
+        order.order_number = "5550001"
+        other = _second_location(db, world)
+        payload = _with_work_order(submission("pdf_sample"), "Inspection 1")
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.location_id == world.location_a
+
+        choose_location(db, stored, other.id, world.user_ids["admin_a"])
+        assert stored.location_id == other.id
+
+        # A revision whose text names another store, and whose number is an order elsewhere.
+        payload["revised_at"] = "2026-10-30T12:00:00Z"
+        _with_work_order(payload, "5550001", "Chipotle - Store #1")
+        stored = store_submission(db, world.op_a, payload).submission
+        assert (stored.location_id, stored.service_order_id) == (other.id, None)
+        assert stored.id not in [s.id for s, _ in relink_submissions(db, world.op_a)]
+        assert stored.location_id == other.id
+
+        # At the chosen store, the order number still links the order.
+        choose_location(db, stored, world.location_a, world.user_ids["admin_a"])
+        assert stored.id in [s.id for s, _ in relink_submissions(db, world.op_a)]
+        assert (stored.location_id, stored.service_order_id) == (
+            world.location_a,
+            world.service_order_a,
+        )
+
+        # Choosing another store clears an order that isn't there.
+        choose_location(db, stored, other.id, world.user_ids["admin_a"])
+        assert (stored.location_id, stored.service_order_id) == (other.id, None)
+        db.rollback()
 
 
 def test_links_by_address_only_when_one_location_is_there(world):

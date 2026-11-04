@@ -388,6 +388,12 @@ CASES = [
         _all(404, platform_admin=200, admin_a=200, staff_a=403),
     ),
     Case(
+        "list risk inspections of operator A",
+        "GET",
+        lambda w: f"/v1/operators/{w.op_a}/risk-inspections",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
         "list risk inspections of company A",
         "GET",
         lambda w: f"/v1/companies/{w.company_a}/risk-inspections",
@@ -460,6 +466,19 @@ CASES = [
         "GET",
         lambda w: f"/v1/risk-inspections/{w.risk_inspection_a}",
         _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "search stores for risk inspection A",
+        "GET",
+        lambda w: f"/v1/risk-inspections/{w.risk_inspection_a}/store-candidates?q=acme",
+        _all(404, platform_admin=200, admin_a=200, staff_a=200),
+    ),
+    Case(
+        "choose the store of risk inspection A",
+        "PUT",
+        lambda w: f"/v1/risk-inspections/{w.risk_inspection_a}/location",
+        _all(404, platform_admin=200, admin_a=200, staff_a=403),
+        lambda w: {"location_id": str(w.location_a)},
     ),
     Case(
         "get stored file of company A",
