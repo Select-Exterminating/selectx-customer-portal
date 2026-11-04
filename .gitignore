@@ -29,4 +29,6 @@ playwright-report/
 .vscode/
 
 # Downloaded GoCanvas submissions (customer data)
-scripts/chiptole/
+# Downloaded submissions are customer data.
+scripts/*/
+gocanvas-submissions/
