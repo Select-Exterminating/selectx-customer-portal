@@ -34,7 +34,7 @@ from app.schemas.program_dashboard import (
     WatchFlag,
 )
 from app.services import area_mapping
-from app.services.dashboard import store_number
+from app.services.dashboard import store_name, store_number
 
 ACTIVITY_SCORE = {"none": 0, "low": 1, "moderate": 2, "heavy": 3}
 ACTIVITY_LEVEL = {v: k for k, v in ACTIVITY_SCORE.items()}
@@ -675,7 +675,7 @@ def program_dashboard(
         return StoreWatchRow(
             location_id=loc.id,
             store_number=store_number(loc.pestpac_company),
-            name=loc.description or loc.pestpac_company,
+            name=store_name(loc),
             city=loc.city,
             state=loc.state,
             latitude=loc.latitude,

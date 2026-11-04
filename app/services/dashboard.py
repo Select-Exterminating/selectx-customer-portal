@@ -37,6 +37,21 @@ def store_number(name: str | None) -> str | None:
     return match.group(1) if match else None
 
 
+def store_name(location: Location) -> str | None:
+    """What to call a store: our store name, else PestPac's name, else, when PestPac only repeats
+    the customer's name (every Sweetgreen is "SWEETGREEN"), its address."""
+    name = location.pestpac_company
+    if location.description:
+        return location.description
+    if (
+        location.address
+        and not store_number(name)
+        and (name or "").strip().casefold() == (location.company_name or "").strip().casefold()
+    ):
+        return location.address
+    return name
+
+
 def _count(condition):
     return func.count().filter(condition)
 

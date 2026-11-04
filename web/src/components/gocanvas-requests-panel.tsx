@@ -15,6 +15,12 @@ import {
 } from "@/lib/api/generated/webhooks/webhooks";
 
 const PAGE_SIZE = 50;
+const STATUS_BADGE = {
+  pending: { variant: "pending", label: "Pending" },
+  processed: { variant: "success", label: "Processed" },
+  ignored: { variant: "outline", label: "Ignored" },
+  failed: { variant: "destructive", label: "Failed" },
+} as const;
 
 function formatBody(raw: string, contentType: string | null): string {
   if (contentType?.includes("json")) {
@@ -41,6 +47,18 @@ function RequestDetail({ requestId }: { requestId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+        {r.detail && (
+          <>
+            <dt className="text-muted-foreground">Outcome</dt>
+            <dd>{r.detail}</dd>
+          </>
+        )}
+        {r.gocanvas_submission_id !== null && (
+          <>
+            <dt className="text-muted-foreground">Submission</dt>
+            <dd className="tabular-nums">{r.gocanvas_submission_id}</dd>
+          </>
+        )}
         <SenderRows request={r} />
         {r.query_string && (
           <>
@@ -85,6 +103,7 @@ function RequestDetail({ requestId }: { requestId: string }) {
 function RequestRow({ request: r }: { request: GoCanvasRequestRead }) {
   const [expanded, setExpanded] = useState(false);
   const panelId = `gocanvas-${r.id}`;
+  const status = STATUS_BADGE[r.status as keyof typeof STATUS_BADGE];
   return (
     <li className="p-4">
       <button
@@ -100,6 +119,7 @@ function RequestRow({ request: r }: { request: GoCanvasRequestRead }) {
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         )}
         <Badge variant="outline">{r.method}</Badge>
+        {status && <Badge variant={status.variant}>{status.label}</Badge>}
         <span className="text-sm">{r.content_type ?? "No content type"}</span>
         <span className="text-sm text-muted-foreground">
           {r.body_size.toLocaleString()} bytes · {r.client_ip ?? "unknown IP"}

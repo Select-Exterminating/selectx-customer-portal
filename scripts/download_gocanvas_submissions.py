@@ -1,15 +1,15 @@
-"""Download full GoCanvas submissions listed in a JSON file.
+"""Download every GoCanvas submission of a form.
 
-The input is a JSON array of submission summaries (as returned by the GoCanvas
-submissions list); only each item's `id` is used. Every submission is fetched from
-`GET {base_url}/api/v3/submissions/{id}` and written to `{out_dir}/{id}.json`.
-Files already present are skipped, so an interrupted run can be resumed.
+Lists the form's submissions from `GET {base_url}/api/v3/submissions?form_id={id}&page={n}`,
+page by page from 1 until a page comes back empty. Every submission is then fetched from
+`GET {base_url}/api/v3/submissions/{id}` and written to `{out_dir}/{id}.json`. Files already
+present are skipped, so an interrupted run can be resumed.
 
 The bearer token is read from GOCANVAS_TOKEN (preferred, keeps it out of shell
-history) or --token.
+history) or --token. Submissions are customer data: keep the output out of git.
 
     GOCANVAS_TOKEN=... pipenv run python scripts/download_gocanvas_submissions.py \
-        submissions.json --out-dir docs/risk-submissions/downloads
+        5777327 --out-dir scripts/chiptole
 """
 
 import argparse
@@ -25,24 +25,13 @@ DEFAULT_BASE_URL = "https://api.gocanvas.com"
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 
-def load_ids(path: Path) -> list[int]:
-    items = json.loads(path.read_text())
-    if not isinstance(items, list):
-        raise ValueError(f"{path}: expected a JSON array of submissions")
-    ids = []
-    for index, item in enumerate(items):
-        if not isinstance(item, dict) or not isinstance(item.get("id"), int):
-            raise ValueError(f"{path}: item {index} has no integer 'id'")
-        ids.append(item["id"])
-    # Keep order, drop duplicates.
-    return list(dict.fromkeys(ids))
-
-
-def fetch_submission(client: httpx.Client, submission_id: int, max_attempts: int) -> dict:
-    """GET one submission, retrying rate limits and server errors with backoff."""
+def get_json(
+    client: httpx.Client, path: str, label: str, max_attempts: int, params: dict | None = None
+):
+    """GET JSON, retrying rate limits and server errors with backoff."""
     for attempt in range(1, max_attempts + 1):
         try:
-            response = client.get(f"/api/v3/submissions/{submission_id}")
+            response = client.get(path, params=params)
         except httpx.TransportError as exc:
             if attempt == max_attempts:
                 raise RuntimeError(f"network error: {exc}") from exc
@@ -54,14 +43,47 @@ def fetch_submission(client: httpx.Client, submission_id: int, max_attempts: int
                 raise RuntimeError(f"HTTP {response.status_code}: {response.text[:200]}")
             retry_after = response.headers.get("Retry-After", "")
             delay = int(retry_after) if retry_after.isdigit() else 2**attempt
-        print(f"  {submission_id}: retrying in {delay}s (attempt {attempt}/{max_attempts})")
+        print(f"  {label}: retrying in {delay}s (attempt {attempt}/{max_attempts})")
         time.sleep(delay)
     raise AssertionError("unreachable")
 
 
+def list_submission_ids(
+    client: httpx.Client, form_id: int, max_attempts: int, delay: float = 0
+) -> list[int]:
+    """The ids of a form's submissions, from page 1 until a page comes back empty."""
+    ids: dict[int, None] = {}  # keeps order, drops duplicates
+    page = 1
+    while True:
+        items = get_json(
+            client,
+            "/api/v3/submissions",
+            f"page {page}",
+            max_attempts,
+            params={"form_id": form_id, "page": page},
+        )
+        if not isinstance(items, list):
+            raise RuntimeError(f"page {page}: expected a JSON array, got {type(items).__name__}")
+        if not items:
+            return list(ids)
+        new = 0
+        for index, item in enumerate(items):
+            if not isinstance(item, dict) or not isinstance(item.get("id"), int):
+                raise RuntimeError(f"page {page}: item {index} has no integer 'id'")
+            if item["id"] not in ids:
+                ids[item["id"]] = None
+                new += 1
+        # A server that ignores `page` would otherwise have this loop forever.
+        if not new:
+            raise RuntimeError(f"page {page}: repeats earlier pages, so paging isn't advancing")
+        print(f"  page {page}: {len(items)} submissions")
+        page += 1
+        time.sleep(delay)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("input", type=Path, help="JSON array of submission summaries")
+    parser.add_argument("form_id", type=int, help="GoCanvas form id, e.g. 5777327")
     parser.add_argument("--out-dir", type=Path, default=Path("gocanvas-submissions"))
     parser.add_argument("--token", help="bearer token (default: $GOCANVAS_TOKEN)")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
@@ -74,20 +96,28 @@ def main() -> int:
     if not token:
         parser.error("no bearer token: set GOCANVAS_TOKEN or pass --token")
 
-    ids = load_ids(args.input)
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"{len(ids)} submissions -> {args.out_dir}")
-
     downloaded, skipped, failed = 0, 0, []
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
     with httpx.Client(base_url=args.base_url, headers=headers, timeout=60) as client:
+        try:
+            ids = list_submission_ids(client, args.form_id, args.max_attempts, args.delay)
+        except RuntimeError as exc:
+            print(f"Could not list form {args.form_id}: {exc}", file=sys.stderr)
+            return 1
+        args.out_dir.mkdir(parents=True, exist_ok=True)
+        print(f"{len(ids)} submissions -> {args.out_dir}")
         for submission_id in ids:
             target = args.out_dir / f"{submission_id}.json"
             if target.exists() and not args.force:
                 skipped += 1
                 continue
             try:
-                submission = fetch_submission(client, submission_id, args.max_attempts)
+                submission = get_json(
+                    client,
+                    f"/api/v3/submissions/{submission_id}",
+                    str(submission_id),
+                    args.max_attempts,
+                )
             except RuntimeError as exc:
                 print(f"  {submission_id}: FAILED {exc}", file=sys.stderr)
                 failed.append(submission_id)

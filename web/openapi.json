@@ -9656,6 +9656,39 @@
             "type": "boolean",
             "title": "Has Raw Body"
           },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "gocanvas_submission_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gocanvas Submission Id"
+          },
           "headers": {
             "additionalProperties": {
               "type": "string"
@@ -9700,6 +9733,9 @@
           "body_size",
           "received_at",
           "has_raw_body",
+          "status",
+          "detail",
+          "gocanvas_submission_id",
           "headers",
           "raw_body",
           "raw_body_purged_at"
@@ -9820,6 +9856,39 @@
           "has_raw_body": {
             "type": "boolean",
             "title": "Has Raw Body"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "gocanvas_submission_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gocanvas Submission Id"
           }
         },
         "type": "object",
@@ -9834,7 +9903,10 @@
           "user_agent",
           "body_size",
           "received_at",
-          "has_raw_body"
+          "has_raw_body",
+          "status",
+          "detail",
+          "gocanvas_submission_id"
         ],
         "title": "GoCanvasRequestRead",
         "description": "A received GoCanvas request, without its body."

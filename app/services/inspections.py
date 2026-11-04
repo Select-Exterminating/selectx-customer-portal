@@ -99,6 +99,8 @@ PEST_TYPE_ALIASES = {"occasional invader": "Occasional Invaders"}
 BOOLEAN_ATTRIBUTES = {"in_mall", "dumbwaiter_operational"}
 MATERIAL_PREFIX = "material."
 INSPECTED_QUESTION = "has this zone been inspected"
+# Free text that's kept in full when a form asks for it in more than one section.
+JOINED_SUMMARY_FIELDS = {"manager_summary", "material_notes"}
 
 
 def _normalize(label: str) -> str:
@@ -450,6 +452,26 @@ def sync_photo_values(submission: InspectionSubmission, *, refetch: bool = False
             value.removed_at = now
 
 
+def _keep_summary_answer(
+    summary: dict, key: str, form_field: InspectionFormField, response: dict, warnings: _Warnings
+) -> None:
+    """Record a summary answer when a form asks for it more than once (National Accounts asks in
+    both its Restrooms and Receiving sections, and inspectors fill in either): a blank never
+    replaces an answer, notes are joined, and otherwise the first stays, with a warning. Every
+    response is still stored as sent."""
+    current = summary.get(key)
+    if current is None or not (_text(current[1].get("value"))):
+        summary[key] = (form_field, response)
+        return
+    old, new = current[1].get("value"), response.get("value")
+    if not _text(new) or new == old:
+        return
+    if key in JOINED_SUMMARY_FIELDS:
+        summary[key] = (current[0], {**current[1], "value": f"{old}\n\n{new}"})
+    else:
+        warnings.add(response, key, "asked twice with different answers; kept the first")
+
+
 def _parse_into(
     db: Session, submission: InspectionSubmission, form: InspectionForm, responses: list[dict]
 ) -> None:
@@ -488,7 +510,7 @@ def _parse_into(
         if key.startswith(MATERIAL_PREFIX):
             materials.append((form_field, response))
         elif key in dict(SUMMARY_FIELDS).values():
-            summary[key] = (form_field, response)
+            _keep_summary_answer(summary, key, form_field, response, warnings)
         elif form_field.zone_key is not None:
             zones.setdefault(form_field.zone_key, {})[key] = (form_field, response)
         else:
@@ -638,7 +660,8 @@ def _parse_summary(summary: dict, warnings: _Warnings) -> RiskInspectionSummary:
 
 def _link(db: Session, submission: InspectionSubmission) -> None:
     """Link the service order by the work order number (a PestPac order number), and the
-    location through it; else the location whose name ends with the store number."""
+    location through it; else the location whose name ends with the store number; else the one
+    location at the address (Sweetgreen's have no store numbers)."""
     submission.service_order_id = None
     submission.location_id = None
     ref = submission.work_order_ref or ""
@@ -658,6 +681,19 @@ def _link(db: Session, submission: InspectionSubmission) -> None:
             .where(
                 Location.operator_id == submission.operator_id,
                 func.upper(Location.pestpac_company).like(f"%#{submission.store_number}"),
+            )
+            .limit(2)
+        ).all()
+        if len(matches) == 1:
+            submission.location_id = matches[0]
+    if submission.location_id is None and submission.address and submission.city:
+        matches = db.scalars(
+            select(Location.id)
+            .where(
+                Location.operator_id == submission.operator_id,
+                Location.removed_at.is_(None),
+                func.upper(func.trim(Location.address)) == submission.address.strip().upper(),
+                func.upper(func.trim(Location.city)) == submission.city.strip().upper(),
             )
             .limit(2)
         ).all()

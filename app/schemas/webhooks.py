@@ -63,6 +63,10 @@ class GoCanvasRequestRead(BaseModel):
     body_size: int
     received_at: datetime
     has_raw_body: bool
+    # pending, processed, ignored, or failed; null if received before processing began.
+    status: str | None
+    detail: str | None
+    gocanvas_submission_id: int | None
 
 
 class GoCanvasRequestDetail(GoCanvasRequestRead):

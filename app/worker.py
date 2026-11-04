@@ -19,6 +19,7 @@ from app.security.secrets import validate_keys
 from app.services import (
     findings_extraction,
     gocanvas,
+    gocanvas_processing,
     service_reports,
     sync_jobs,
     webhook_handlers,
@@ -34,13 +35,40 @@ class _Stop:
 
 def run_pending() -> int:
     """Handle webhook events, then run every claimable job, draft, and findings extraction;
-    returns how many ran. With SYNC_ACTIVE off, only the LLM work: events and jobs wait, since
-    both call PestPac."""
+    returns how many ran. With SYNC_ACTIVE off, only GoCanvas and the LLM work: events and jobs
+    wait, since both call PestPac."""
     if not get_settings().sync_active:
-        return run_pending_drafts() + run_pending_findings()
+        return run_pending_gocanvas() + run_pending_drafts() + run_pending_findings()
     return (
-        run_pending_webhooks() + run_pending_jobs() + run_pending_drafts() + run_pending_findings()
+        run_pending_webhooks()
+        + run_pending_gocanvas()
+        + run_pending_jobs()
+        + run_pending_drafts()
+        + run_pending_findings()
     )
+
+
+def run_pending_gocanvas() -> int:
+    """Process GoCanvas webhook deliveries: risk form submissions are fetched and stored."""
+    ran = 0
+    while not _Stop.requested:
+        with SessionLocal() as db:
+            request = gocanvas_processing.claim_next(db)
+            if request is None:
+                return ran
+            request_id = request.id
+            try:
+                gocanvas_processing.process(db, request)
+            except Exception as exc:
+                # A bug, not GoCanvas failing (those are recorded by process). Mark it failed so
+                # it isn't retried in a loop.
+                log.exception("GoCanvas request %s crashed", request_id)
+                db.rollback()
+                gocanvas_processing.mark_crashed(
+                    db, request_id, f"Handler error: {type(exc).__name__}"
+                )
+            ran += 1
+    return ran
 
 
 def run_pending_webhooks() -> int:
@@ -152,6 +180,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--once", action="store_true", help="run queued jobs, then exit")
     parser.add_argument(
+        "--requeue-gocanvas",
+        action="store_true",
+        help="send ignored and failed GoCanvas deliveries back through the worker",
+    )
+    parser.add_argument(
         "--requeue-failed-invoices",
         action="store_true",
         help="first send failed invoice events whose invoice isn't stored back to the queue",
@@ -170,6 +203,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.requeue_failed_invoices:
         with SessionLocal() as db:
             log.info("Requeued %s invoice events", webhook_handlers.requeue_failed_invoices(db))
+
+    if args.requeue_gocanvas:
+        with SessionLocal() as db:
+            log.info("Requeued %s GoCanvas deliveries", gocanvas_processing.requeue(db))
 
     if args.once:
         run_pending()

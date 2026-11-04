@@ -2,7 +2,18 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -88,8 +99,9 @@ class WebhookEvent(Base):
 
 
 class GoCanvasRequest(Base):
-    """A request received at an operator's GoCanvas webhook URL, stored as received (every one:
-    GoCanvas's format isn't known yet). Not processed. The raw body is cleared after
+    """A request received at an operator's GoCanvas webhook URL, stored as received (every one).
+    The worker processes it (`app/services/gocanvas_processing.py`); `status` is null on those
+    received before processing began. The raw body is cleared after
     WEBHOOK_RAW_RETENTION_DAYS; the row stays."""
 
     __tablename__ = "gocanvas_requests"
@@ -114,3 +126,10 @@ class GoCanvasRequest(Base):
     received_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )
+    # pending, processed, ignored, or failed.
+    status: Mapped[str | None] = mapped_column(String(20), index=True)
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    detail: Mapped[str | None] = mapped_column(String(1000))
+    gocanvas_submission_id: Mapped[int | None] = mapped_column(BigInteger)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
