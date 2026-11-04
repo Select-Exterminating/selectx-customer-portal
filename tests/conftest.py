@@ -375,6 +375,7 @@ def storage(monkeypatch) -> InMemoryStorage:
     monkeypatch.setattr("app.api.v1._file_response.get_storage", lambda: store)
     monkeypatch.setattr("app.api.v1.service_reports.get_storage", lambda: store)
     monkeypatch.setattr("app.load_inspections.get_storage", lambda: store)
+    monkeypatch.setattr("app.services.gocanvas_processing.get_storage", lambda: store)
     monkeypatch.setattr("app.fetch_inspection_photos.get_storage", lambda: store)
     return store
 

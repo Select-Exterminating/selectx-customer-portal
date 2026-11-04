@@ -1,6 +1,5 @@
-"""GoCanvas webhook capture (stub): every request to an operator's URL is stored as received.
-
-Nothing is processed until GoCanvas's format is known. Credentials in headers are never stored.
+"""GoCanvas webhook capture: every request to an operator's URL is stored as received, and the
+worker processes it (`gocanvas_processing`). Credentials in headers are never stored.
 """
 
 import hashlib
@@ -48,6 +47,7 @@ def receive(
         body_size=len(raw),
         body_sha256=hashlib.sha256(raw).hexdigest(),
         raw_body=raw.decode("utf-8", errors="replace"),
+        status="pending",
         **client.columns(),
     )
     db.add(request)

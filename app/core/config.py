@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     # so credentials can't be sent to an arbitrary host.
     gocanvas_token_url: str = "https://api.gocanvas.com/api/v3/oauth/token"
     gocanvas_base_url: str = "https://api.gocanvas.com/api/v3"
+    # Webhook deliveries for these forms are processed as risk assessments (comma-separated).
+    gocanvas_risk_form_ids: str = "5777327,5962102"
 
     # Location documents synced from PestPac: those dated on or after this day.
     pestpac_documents_start_date: date = date(2025, 9, 25)
@@ -94,6 +96,17 @@ class Settings(BaseSettings):
     openrouter_app_title: str = "SELECTX Customer Portal"
     # Logs prompts and completions (customer data). Local debugging only.
     openrouter_debug_bodies: bool = False
+
+    @field_validator("gocanvas_risk_form_ids")
+    @classmethod
+    def _risk_form_ids_are_numbers(cls, value: str) -> str:
+        if not all(part.strip().isdigit() for part in value.split(",") if part.strip()):
+            raise ValueError("GOCANVAS_RISK_FORM_IDS must be comma-separated form ids")
+        return value
+
+    @property
+    def risk_form_ids(self) -> set[int]:
+        return {int(part) for part in self.gocanvas_risk_form_ids.split(",") if part.strip()}
 
     @field_validator("jwt_secret")
     @classmethod

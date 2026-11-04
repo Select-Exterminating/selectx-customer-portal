@@ -20,4 +20,7 @@ export interface GoCanvasRequestRead {
   body_size: number;
   received_at: string;
   has_raw_body: boolean;
+  status: string | null;
+  detail: string | null;
+  gocanvas_submission_id: number | null;
 }

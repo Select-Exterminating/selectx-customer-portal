@@ -18,6 +18,9 @@ export interface GoCanvasRequestDetail {
   body_size: number;
   received_at: string;
   has_raw_body: boolean;
+  status: string | null;
+  detail: string | null;
+  gocanvas_submission_id: number | null;
   headers: GoCanvasRequestDetailHeaders;
   raw_body: string | null;
   raw_body_purged_at: string | null;
