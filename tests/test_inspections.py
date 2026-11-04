@@ -7,13 +7,14 @@ docs/risk-submissions/Chipotle_Riskgate_Inspection_Form.pdf, so its expectations
 
 import copy
 import json
+import logging
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
 from sqlalchemy import select
 
-from app import load_inspections
+from app import load_inspections, relink_inspections
 from app.db.session import SessionLocal
 from app.models import InspectionKind, InspectionSubmission, Location, ServiceOrder
 from app.services.inspections import (
@@ -442,6 +443,125 @@ def _at_address(payload: dict, address: str, city: str) -> dict:
         elif label == "City":
             response["value"] = city
     return payload
+
+
+def _with_work_order(payload: dict, ref: str, store: str = "") -> dict:
+    for response in payload["responses"]:
+        if response["export_label"] == "WorkOrderI":
+            response["value"] = ref
+        elif response["export_label"] == "StoreNumbe":
+            response["value"] = store
+    return payload
+
+
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "1",
+        "Inspection 1",
+        "Inspection  1",
+        "Inspect 1",
+        "1 inspection",
+        "Risk assessment #1",
+        "#1 risk assessment",
+        "Chipotle #1\n116 Andrew Dr, Pittsburgh, PA",
+        "Inspection of #1. 89 Wagner Rd, Monaca, PA 15061",
+    ],
+)
+def test_links_by_a_store_number_typed_in_the_work_order(world, ref):
+    with SessionLocal() as db:
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        stored = store_submission(
+            db, world.op_a, _with_work_order(submission("pdf_sample"), ref)
+        ).submission
+        assert stored.location_id == world.location_a
+        db.rollback()
+
+
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "Risk assessment",
+        "assessment",
+        "#999 risk assessment",
+        "1 Andrew Dr",
+        "Inspection 1 Main St",
+    ],
+)
+def test_other_work_order_text_finds_no_store(world, ref):
+    with SessionLocal() as db:
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        stored = store_submission(
+            db, world.op_a, _with_work_order(submission("pdf_sample"), ref)
+        ).submission
+        assert stored.location_id is None
+        db.rollback()
+
+
+def test_a_store_number_that_matches_nothing_never_follows_the_address(world):
+    """An inspector picks another customer's store on the form: its address must not link it."""
+    with SessionLocal() as db:
+        location = db.get(Location, world.location_a)
+        location.address, location.city = "1500 3RD AVE", "NEW YORK"
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        payload = _at_address(submission("pdf_sample"), "1500 3rd Ave", "New York")
+        _with_work_order(payload, "Risk assessment", "SWEETGREEN - Loc #304851")
+        stored = store_submission(db, world.op_a, payload).submission
+        assert (stored.store_number, stored.location_id) == ("304851", None)
+        db.rollback()
+
+
+def test_the_work_order_beats_a_wrong_pick_on_the_form(world):
+    with SessionLocal() as db:
+        location = db.get(Location, world.location_a)
+        location.pestpac_company = "CHIPOTLE - STORE #5221"
+        other = Location(
+            operator_id=world.op_a,
+            bill_to_id=world.bill_to_a,
+            pestpac_location_id=800998,
+            pestpac_fetched_at=location.pestpac_fetched_at,
+            pestpac_company="SWEETGREEN",
+            address="1500 3RD AVE",
+            city="NEW YORK",
+        )
+        db.add(other)
+        db.flush()
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        payload = _at_address(submission("pdf_sample"), "1500 3rd Ave", "New York")
+        _with_work_order(
+            payload, "Chipotle #5221\n116 Andrew Dr, Pittsburgh, PA", "SWEETGREEN - Loc #304851"
+        )
+        stored = store_submission(db, world.op_a, payload).submission
+        assert stored.location_id == world.location_a
+        db.rollback()
+
+
+def test_relink_applies_the_rules_to_stored_submissions(world, caplog):
+    with SessionLocal() as db:
+        import_form(db, world.op_a, FORM, InspectionKind.risk)
+        stored = store_submission(
+            db, world.op_a, _with_work_order(submission("pdf_sample"), "Inspection 1")
+        ).submission
+        stored.location_id = None
+        db.commit()
+        submission_id = stored.id
+
+    args = ["--operator-id", str(world.op_a)]
+    assert relink_inspections.main([*args, "--dry-run"]) == 0
+    with SessionLocal() as db:
+        assert db.get(InspectionSubmission, submission_id).location_id is None
+
+    assert relink_inspections.main(args) == 0
+    with SessionLocal() as db:
+        assert db.get(InspectionSubmission, submission_id).location_id == world.location_a
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO, logger="app.relink_inspections"):
+        assert relink_inspections.main(args) == 0
+    assert "0 submissions changed: 0 to another store" in caplog.text
+    assert relink_inspections.main(["--operator-id", str(world.op_b)]) == 0
+    with SessionLocal() as db:
+        assert db.get(InspectionSubmission, submission_id).location_id == world.location_a
 
 
 def test_links_by_address_only_when_one_location_is_there(world):
