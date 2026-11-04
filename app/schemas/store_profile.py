@@ -3,6 +3,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.client_findings import ClientFindingRead
 from app.schemas.program_dashboard import WatchFlag
 
 # Every field is in the response, so the generated client types none of them as optional.
@@ -155,6 +156,7 @@ class StoreProfile(BaseModel):
     stage: str
     attention: str
     flags: list[WatchFlag]
+    client_findings: list[ClientFindingRead]  # newest logged first
     team_director: str | None
     executive_team_director: str | None
     numbers: ProfileNumbers

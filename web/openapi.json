@@ -6317,6 +6317,124 @@
         }
       }
     },
+    "/v1/locations/{location_id}/client-findings": {
+      "post": {
+        "tags": [
+          "client-findings"
+        ],
+        "summary": "Log Client Finding",
+        "description": "Log what the customer's own people found at this store. Reading is on the store profile.",
+        "operationId": "client-findings-log_client_finding",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Location Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientFindingWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientFindingRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/client-findings/{finding_id}": {
+      "put": {
+        "tags": [
+          "client-findings"
+        ],
+        "summary": "Update Client Finding",
+        "description": "Edit a finding, or close it. Findings are never deleted.",
+        "operationId": "client-findings-update_client_finding",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "finding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Finding Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientFindingWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientFindingRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/roles": {
       "get": {
         "tags": [
@@ -8376,6 +8494,170 @@
         ],
         "title": "Breakdown",
         "description": "How often something was logged, with the stores it appeared at."
+      },
+      "ClientFindingRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reported_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported On"
+          },
+          "logged_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Logged On"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "finding": {
+            "type": "string",
+            "title": "Finding"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          },
+          "zone_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Name"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "select_response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reported_on",
+          "logged_on",
+          "source",
+          "finding",
+          "zone",
+          "zone_name",
+          "severity",
+          "status",
+          "select_response"
+        ],
+        "title": "ClientFindingRead"
+      },
+      "ClientFindingWrite": {
+        "properties": {
+          "reported_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported On"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "finding": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Finding"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Zone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "title": "Status",
+            "default": "open"
+          },
+          "select_response": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "finding",
+          "severity"
+        ],
+        "title": "ClientFindingWrite"
       },
       "CohortPoint": {
         "properties": {
@@ -18686,6 +18968,13 @@
             "type": "array",
             "title": "Flags"
           },
+          "client_findings": {
+            "items": {
+              "$ref": "#/components/schemas/ClientFindingRead"
+            },
+            "type": "array",
+            "title": "Client Findings"
+          },
           "team_director": {
             "anyOf": [
               {
@@ -18783,6 +19072,7 @@
           "stage",
           "attention",
           "flags",
+          "client_findings",
           "team_director",
           "executive_team_director",
           "numbers",
