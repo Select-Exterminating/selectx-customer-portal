@@ -5,7 +5,13 @@ from app.models.contact import Contact, ContactLink, ContactRole
 from app.models.customer import AssessmentTarget, BillTo, Company, Location
 from app.models.document import Document
 from app.models.file import StoredFile
-from app.models.gocanvas import GoCanvasConnection
+from app.models.gocanvas import (
+    GoCanvasConnection,
+    GoCanvasForm,
+    GoCanvasFormProcessing,
+    GoCanvasProcessing,
+    GoCanvasSubmission,
+)
 from app.models.inspection import (
     InspectionForm,
     InspectionFormField,
@@ -69,6 +75,10 @@ __all__ = [
     "Credential",
     "Document",
     "GoCanvasConnection",
+    "GoCanvasForm",
+    "GoCanvasFormProcessing",
+    "GoCanvasProcessing",
+    "GoCanvasSubmission",
     "GoCanvasRequest",
     "InspectionFinding",
     "InspectionFindingItem",

@@ -247,7 +247,7 @@ Check all of these on the public `web` domain:
    railway ssh --service worker -- python -m app.resync_locations
    ```
 
-GoCanvas submissions aren't read from webhooks yet, so loading them works as it did locally.
+GoCanvas webhook deliveries are stored and routed by form root id. The migration sets each risk form it finds to Risk Assessment; check the GoCanvas API tab's Form Processing table.
 
 ## 8. After cutover
 

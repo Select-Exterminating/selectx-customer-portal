@@ -401,6 +401,25 @@ CASES = [
         _all(404, platform_admin=200, admin_a=200, staff_a=403),
     ),
     Case(
+        "list GoCanvas form processing of A",
+        "GET",
+        lambda w: f"/v1/operators/{w.op_a}/gocanvas-form-processing",
+        _all(404, platform_admin=200, admin_a=200, staff_a=403),
+    ),
+    Case(
+        "set GoCanvas form processing of A",
+        "PUT",
+        lambda w: f"/v1/operators/{w.op_a}/gocanvas-form-processing/5765478",
+        _all(404, platform_admin=200, admin_a=200, staff_a=403),
+        lambda w: {"processing": "risk_assessment"},
+    ),
+    Case(
+        "clear GoCanvas form processing of A",
+        "DELETE",
+        lambda w: f"/v1/operators/{w.op_a}/gocanvas-form-processing/5765478",
+        _all(404, platform_admin=204, admin_a=204, staff_a=403),
+    ),
+    Case(
         "list risk inspections of operator A",
         "GET",
         lambda w: f"/v1/operators/{w.op_a}/risk-inspections",
@@ -779,4 +798,6 @@ def _template(path: str) -> str:
     path = path.replace("/tenants/{operator_id}/", "/tenants/{tenant_id}/")
     # Zone routes take a zone value, not an id.
     path = path.replace("/zones/dining_guest", "/zones/{zone}")
+    # Form processing takes a GoCanvas root id, not one of ours.
+    path = path.replace("/gocanvas-form-processing/5765478", "/gocanvas-form-processing/{root}")
     return path.split("?", 1)[0]

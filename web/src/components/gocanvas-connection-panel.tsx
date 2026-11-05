@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { GoCanvasFormProcessingPanel } from "@/components/gocanvas-form-processing-panel";
 import { ConnectionStatusBadge } from "@/components/pestpac-connection-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -217,6 +218,7 @@ export function GoCanvasConnectionPanel({ operatorId }: { operatorId: string }) 
           </CardContent>
         </Card>
       )}
+      <GoCanvasFormProcessingPanel operatorId={operatorId} canWrite={canWrite} />
     </div>
   );
 }

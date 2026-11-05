@@ -49,7 +49,7 @@ def run_pending() -> int:
 
 
 def run_pending_gocanvas() -> int:
-    """Process GoCanvas webhook deliveries: risk form submissions are fetched and stored."""
+    """Process GoCanvas webhook deliveries: submissions are fetched, stored, and processed."""
     ran = 0
     while not _Stop.requested:
         with SessionLocal() as db:
@@ -182,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--requeue-gocanvas",
         action="store_true",
-        help="send ignored and failed GoCanvas deliveries back through the worker",
+        help="send ignored, failed, and stored-only GoCanvas deliveries back through the worker",
     )
     parser.add_argument(
         "--requeue-failed-invoices",

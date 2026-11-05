@@ -11,6 +11,7 @@ from app.api.v1 import (
     documents,
     files,
     gocanvas_connection,
+    gocanvas_form_processing,
     invoices,
     locations,
     members,
@@ -45,6 +46,7 @@ router.include_router(members.router)
 router.include_router(members.company_router)
 router.include_router(pestpac_connection.router)
 router.include_router(gocanvas_connection.router)
+router.include_router(gocanvas_form_processing.router)
 router.include_router(reports.router)
 router.include_router(service_reports.router)
 router.include_router(risk_inspections.router)
