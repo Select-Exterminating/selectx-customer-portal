@@ -5150,6 +5150,176 @@
         }
       }
     },
+    "/v1/operators/{operator_id}/gocanvas-form-processing": {
+      "get": {
+        "tags": [
+          "gocanvas"
+        ],
+        "summary": "List Form Processing",
+        "description": "Each form root id with its processing, including roots seen in a submission with none.",
+        "operationId": "gocanvas-list_form_processing",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Operator Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoCanvasFormProcessingList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/operators/{operator_id}/gocanvas-form-processing/{root}": {
+      "put": {
+        "tags": [
+          "gocanvas"
+        ],
+        "summary": "Set Form Processing",
+        "description": "Set a root's processing. Stored submissions nothing has run on yet go back in the queue.",
+        "operationId": "gocanvas-set_form_processing",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "root",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9223372036854775807,
+              "exclusiveMinimum": 0,
+              "title": "Root"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoCanvasFormProcessingWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoCanvasFormProcessingRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "gocanvas"
+        ],
+        "summary": "Clear Form Processing",
+        "description": "Stop processing a root. Its submissions are still fetched and stored.",
+        "operationId": "gocanvas-clear_form_processing",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "root",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9223372036854775807,
+              "exclusiveMinimum": 0,
+              "title": "Root"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/companies/{company_id}/report-templates": {
       "get": {
         "tags": [
@@ -7506,8 +7676,8 @@
           },
           "total": {
             "type": "integer",
-            "maximum": 100000,
-            "minimum": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
             "title": "Total"
           }
         },
@@ -7714,7 +7884,7 @@
         "properties": {
           "pestpac_bill_to_id": {
             "type": "integer",
-            "exclusiveMinimum": 0,
+            "exclusiveMinimum": 0.0,
             "title": "Pestpac Bill To Id"
           },
           "name": {
@@ -10470,6 +10640,88 @@
         ],
         "title": "GoCanvasConnectionWrite",
         "description": "The client secret is write-only. Omit it to keep the stored value (required on first\nsetup)."
+      },
+      "GoCanvasFormProcessingList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GoCanvasFormProcessingRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "GoCanvasFormProcessingList"
+      },
+      "GoCanvasFormProcessingRead": {
+        "properties": {
+          "root_version_id": {
+            "type": "integer",
+            "title": "Root Version Id"
+          },
+          "form_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Form Name"
+          },
+          "processing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoCanvasProcessing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submission_count": {
+            "type": "integer",
+            "title": "Submission Count"
+          },
+          "unprocessed_count": {
+            "type": "integer",
+            "title": "Unprocessed Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_version_id",
+          "submission_count",
+          "unprocessed_count"
+        ],
+        "title": "GoCanvasFormProcessingRead",
+        "description": "A form's root id, whether it has processing set or has only been seen in a submission."
+      },
+      "GoCanvasFormProcessingWrite": {
+        "properties": {
+          "processing": {
+            "$ref": "#/components/schemas/GoCanvasProcessing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processing"
+        ],
+        "title": "GoCanvasFormProcessingWrite"
+      },
+      "GoCanvasProcessing": {
+        "type": "string",
+        "enum": [
+          "risk_assessment",
+          "ipm_form"
+        ],
+        "title": "GoCanvasProcessing",
+        "description": "What a stored submission is processed as. Changing the set needs a migration."
       },
       "GoCanvasRequestDetail": {
         "properties": {

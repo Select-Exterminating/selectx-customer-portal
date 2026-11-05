@@ -18,6 +18,7 @@ const PAGE_SIZE = 50;
 const STATUS_BADGE = {
   pending: { variant: "pending", label: "Pending" },
   processed: { variant: "success", label: "Processed" },
+  stored: { variant: "outline", label: "Stored" },
   ignored: { variant: "outline", label: "Ignored" },
   failed: { variant: "destructive", label: "Failed" },
 } as const;

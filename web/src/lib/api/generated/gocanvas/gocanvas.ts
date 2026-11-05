@@ -26,6 +26,9 @@ import type {
 import type {
   GoCanvasConnectionRead,
   GoCanvasConnectionWrite,
+  GoCanvasFormProcessingList,
+  GoCanvasFormProcessingRead,
+  GoCanvasFormProcessingWrite,
   HTTPValidationError
 } from '../model';
 
@@ -363,4 +366,323 @@ export const useGocanvasVerifyConnection = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getGocanvasVerifyConnectionMutationOptions(options), queryClient);
+    }
+    export type gocanvasListFormProcessingResponse200 = {
+  data: GoCanvasFormProcessingList
+  status: 200
+}
+
+export type gocanvasListFormProcessingResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type gocanvasListFormProcessingResponseSuccess = (gocanvasListFormProcessingResponse200) & {
+  headers: Headers;
+};
+export type gocanvasListFormProcessingResponseError = (gocanvasListFormProcessingResponse422) & {
+  headers: Headers;
+};
+
+export const getGocanvasListFormProcessingUrl = (operatorId: string,) => {
+
+
+
+
+  return `/v1/operators/${operatorId}/gocanvas-form-processing`
+}
+
+/**
+ * Each form root id with its processing, including roots seen in a submission with none.
+ * @summary List Form Processing
+ */
+export const gocanvasListFormProcessing = async (operatorId: string, options?: Parameters<typeof bffFetch>[1]): Promise<gocanvasListFormProcessingResponseSuccess> => {
+
+  return bffFetch<gocanvasListFormProcessingResponseSuccess>(getGocanvasListFormProcessingUrl(operatorId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGocanvasListFormProcessingQueryKey = (operatorId: string,) => {
+    return [
+    `/v1/operators/${operatorId}/gocanvas-form-processing`
+    ] as const;
+    }
+
+
+export const getGocanvasListFormProcessingQueryOptions = <TData = Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError = HTTPValidationError>(operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGocanvasListFormProcessingQueryKey(operatorId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof gocanvasListFormProcessing>>> = ({ signal }) => gocanvasListFormProcessing(operatorId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: operatorId !== null && operatorId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GocanvasListFormProcessingQueryResult = NonNullable<Awaited<ReturnType<typeof gocanvasListFormProcessing>>>
+export type GocanvasListFormProcessingQueryError = HTTPValidationError
+
+
+export function useGocanvasListFormProcessing<TData = Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError = HTTPValidationError>(
+ operatorId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof gocanvasListFormProcessing>>,
+          TError,
+          Awaited<ReturnType<typeof gocanvasListFormProcessing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGocanvasListFormProcessing<TData = Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof gocanvasListFormProcessing>>,
+          TError,
+          Awaited<ReturnType<typeof gocanvasListFormProcessing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGocanvasListFormProcessing<TData = Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Form Processing
+ */
+
+export function useGocanvasListFormProcessing<TData = Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError = HTTPValidationError>(
+ operatorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof gocanvasListFormProcessing>>, TError, TData>>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGocanvasListFormProcessingQueryOptions(operatorId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type gocanvasSetFormProcessingResponse200 = {
+  data: GoCanvasFormProcessingRead
+  status: 200
+}
+
+export type gocanvasSetFormProcessingResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type gocanvasSetFormProcessingResponseSuccess = (gocanvasSetFormProcessingResponse200) & {
+  headers: Headers;
+};
+export type gocanvasSetFormProcessingResponseError = (gocanvasSetFormProcessingResponse422) & {
+  headers: Headers;
+};
+
+export const getGocanvasSetFormProcessingUrl = (operatorId: string,
+    root: number,) => {
+
+
+
+
+  return `/v1/operators/${operatorId}/gocanvas-form-processing/${root}`
+}
+
+/**
+ * Set a root's processing. Stored submissions nothing has run on yet go back in the queue.
+ * @summary Set Form Processing
+ */
+export const gocanvasSetFormProcessing = async (operatorId: string,
+    root: number,
+    goCanvasFormProcessingWrite: GoCanvasFormProcessingWrite, options?: Parameters<typeof bffFetch>[1]): Promise<gocanvasSetFormProcessingResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bffFetch<gocanvasSetFormProcessingResponseSuccess>(getGocanvasSetFormProcessingUrl(operatorId,root),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(goCanvasFormProcessingWrite)
+  }
+);}
+
+
+
+
+
+export const getGocanvasSetFormProcessingMutationKey = () => ['gocanvasSetFormProcessing'] as const;
+
+export const getGocanvasSetFormProcessingMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gocanvasSetFormProcessing>>, TError,GocanvasSetFormProcessingMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof gocanvasSetFormProcessing>>, TError,GocanvasSetFormProcessingMutationVariables, TContext> => {
+
+const mutationKey = getGocanvasSetFormProcessingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof gocanvasSetFormProcessing>>, GocanvasSetFormProcessingMutationVariables> = (props) => {
+          const {operatorId,root,data} = props ?? {};
+
+          return  gocanvasSetFormProcessing(operatorId,root,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GocanvasSetFormProcessingMutationResult = NonNullable<Awaited<ReturnType<typeof gocanvasSetFormProcessing>>>
+    export type GocanvasSetFormProcessingMutationBody = GoCanvasFormProcessingWrite
+    export type GocanvasSetFormProcessingMutationError = HTTPValidationError
+    export type GocanvasSetFormProcessingMutationVariables = {operatorId: string;root: number;data: GoCanvasFormProcessingWrite}
+
+    /**
+ * @summary Set Form Processing
+ */
+export const useGocanvasSetFormProcessing = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gocanvasSetFormProcessing>>, TError,GocanvasSetFormProcessingMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof gocanvasSetFormProcessing>>,
+        TError,
+        GocanvasSetFormProcessingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGocanvasSetFormProcessingMutationOptions(options), queryClient);
+    }
+    export type gocanvasClearFormProcessingResponse204 = {
+  data: void
+  status: 204
+}
+
+export type gocanvasClearFormProcessingResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type gocanvasClearFormProcessingResponseSuccess = (gocanvasClearFormProcessingResponse204) & {
+  headers: Headers;
+};
+export type gocanvasClearFormProcessingResponseError = (gocanvasClearFormProcessingResponse422) & {
+  headers: Headers;
+};
+
+export const getGocanvasClearFormProcessingUrl = (operatorId: string,
+    root: number,) => {
+
+
+
+
+  return `/v1/operators/${operatorId}/gocanvas-form-processing/${root}`
+}
+
+/**
+ * Stop processing a root. Its submissions are still fetched and stored.
+ * @summary Clear Form Processing
+ */
+export const gocanvasClearFormProcessing = async (operatorId: string,
+    root: number, options?: Parameters<typeof bffFetch>[1]): Promise<gocanvasClearFormProcessingResponseSuccess> => {
+
+  return bffFetch<gocanvasClearFormProcessingResponseSuccess>(getGocanvasClearFormProcessingUrl(operatorId,root),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getGocanvasClearFormProcessingMutationKey = () => ['gocanvasClearFormProcessing'] as const;
+
+export const getGocanvasClearFormProcessingMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gocanvasClearFormProcessing>>, TError,GocanvasClearFormProcessingMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof gocanvasClearFormProcessing>>, TError,GocanvasClearFormProcessingMutationVariables, TContext> => {
+
+const mutationKey = getGocanvasClearFormProcessingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof gocanvasClearFormProcessing>>, GocanvasClearFormProcessingMutationVariables> = (props) => {
+          const {operatorId,root} = props ?? {};
+
+          return  gocanvasClearFormProcessing(operatorId,root,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GocanvasClearFormProcessingMutationResult = NonNullable<Awaited<ReturnType<typeof gocanvasClearFormProcessing>>>
+
+    export type GocanvasClearFormProcessingMutationError = HTTPValidationError
+    export type GocanvasClearFormProcessingMutationVariables = {operatorId: string;root: number}
+
+    /**
+ * @summary Clear Form Processing
+ */
+export const useGocanvasClearFormProcessing = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gocanvasClearFormProcessing>>, TError,GocanvasClearFormProcessingMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof gocanvasClearFormProcessing>>,
+        TError,
+        GocanvasClearFormProcessingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGocanvasClearFormProcessingMutationOptions(options), queryClient);
     }

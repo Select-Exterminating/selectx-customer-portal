@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models import ConnectionStatus
+from app.models import ConnectionStatus, GoCanvasProcessing
 
 
 class GoCanvasConnectionWrite(BaseModel):
@@ -23,3 +23,23 @@ class GoCanvasConnectionRead(BaseModel):
     last_verified_at: datetime | None = None
     last_error: str | None = None
     updated_at: datetime | None = None
+
+
+class GoCanvasFormProcessingWrite(BaseModel):
+    processing: GoCanvasProcessing
+
+
+class GoCanvasFormProcessingRead(BaseModel):
+    """A form's root id, whether it has processing set or has only been seen in a submission."""
+
+    root_version_id: int
+    # The newest version we hold; null for a root set by hand that nothing has arrived for.
+    form_name: str | None = None
+    processing: GoCanvasProcessing | None = None
+    submission_count: int
+    # Stored submissions nothing has run on yet.
+    unprocessed_count: int
+
+
+class GoCanvasFormProcessingList(BaseModel):
+    items: list[GoCanvasFormProcessingRead]
