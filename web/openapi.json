@@ -5866,6 +5866,263 @@
         }
       }
     },
+    "/v1/service-reports/{report_id}/notes": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Add Service Report Note",
+        "description": "Add a note to a draft, recording who added it. It's marked as added in the portal and\nisn't sent to PestPac. It starts selected, so the narrative is drafted from it.",
+        "operationId": "reports-add_service_report_note",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportNoteAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/service-reports/{report_id}/notes/{note_id}": {
+      "delete": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Remove Service Report Note",
+        "description": "Remove a note added in the portal from a draft. PestPac's notes can't be removed.",
+        "operationId": "reports-remove_service_report_note",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/service-reports/{report_id}/photos": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Add Service Report Photo",
+        "description": "Upload a photo to a draft, recording who added it. It's marked as added in the portal\nand isn't sent to PestPac. It starts selected, at the end of the photos.",
+        "operationId": "reports-add_service_report_photo",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The file's name",
+              "title": "Name"
+            },
+            "description": "The file's name"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "One image (JPEG, PNG, WebP, or GIF) as the raw body.",
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/service-reports/{report_id}/photos/{file_id}": {
+      "delete": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Remove Service Report Photo",
+        "description": "Remove an uploaded photo from a draft. PestPac's photos can't be removed.",
+        "operationId": "reports-remove_service_report_photo",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/service-reports/{report_id}/draft": {
       "post": {
         "tags": [
@@ -16371,6 +16628,32 @@
         ],
         "title": "RefreshRequest"
       },
+      "ReportAddedBy": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "at"
+        ],
+        "title": "ReportAddedBy",
+        "description": "Who added a portal note or photo, and when. The email is kept as it was then."
+      },
       "ReportConditionComment": {
         "properties": {
           "comment_id": {
@@ -16643,6 +16926,22 @@
         ],
         "title": "ReportLibraryPage"
       },
+      "ReportNoteAdd": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ReportNoteAdd",
+        "description": "A note added in the portal by whoever is writing the report. It isn't sent to PestPac."
+      },
       "ReportNoteChoice": {
         "properties": {
           "note_id": {
@@ -16669,9 +16968,35 @@
             "format": "uuid",
             "title": "Note Id"
           },
+          "source": {
+            "type": "string",
+            "enum": [
+              "pestpac",
+              "portal"
+            ],
+            "title": "Source",
+            "default": "pestpac"
+          },
           "pestpac_note_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pestpac Note Id"
+          },
+          "added_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportAddedBy"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "note_date": {
             "anyOf": [
@@ -16739,14 +17064,33 @@
           "selected"
         ],
         "title": "ReportNoteItem",
-        "description": "A note dated near the order's work date, as the LLM sees it if selected."
+        "description": "A note dated near the order's work date, or one added in the portal, as the LLM sees it\nif selected."
       },
       "ReportPhotoChoice": {
         "properties": {
           "document_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Document Id"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
           },
           "selected": {
             "type": "boolean",
@@ -16767,21 +17111,66 @@
         },
         "type": "object",
         "required": [
-          "document_id",
           "selected"
         ],
-        "title": "ReportPhotoChoice"
+        "title": "ReportPhotoChoice",
+        "description": "A photo by its `document_id` (PestPac) or `file_id` (uploaded in the portal)."
       },
       "ReportPhotoItem": {
         "properties": {
-          "document_id": {
+          "source": {
             "type": "string",
-            "format": "uuid",
+            "enum": [
+              "pestpac",
+              "portal"
+            ],
+            "title": "Source",
+            "default": "pestpac"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Document Id"
           },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
           "pestpac_document_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pestpac Document Id"
+          },
+          "added_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportAddedBy"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "anyOf": [
@@ -16836,7 +17225,6 @@
         },
         "type": "object",
         "required": [
-          "document_id",
           "pestpac_document_id",
           "name",
           "file_name",
@@ -16844,7 +17232,7 @@
           "selected"
         ],
         "title": "ReportPhotoItem",
-        "description": "An image dated near the order's work date. Selected ones appear in the report, in\nlist order, with their caption."
+        "description": "An image dated near the order's work date, or one uploaded in the portal. Selected ones\nappear in the report, in list order, with their caption. PestPac photos are documents\n(`document_id`); uploads are stored files (`file_id`) and aren't in PestPac."
       },
       "ReportPreview": {
         "properties": {

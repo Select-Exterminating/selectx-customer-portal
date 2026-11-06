@@ -4,13 +4,18 @@
  * Customer Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportAddedBy } from './reportAddedBy';
+import type { ReportNoteItemSource } from './reportNoteItemSource';
 
 /**
- * A note dated near the order's work date, as the LLM sees it if selected.
+ * A note dated near the order's work date, or one added in the portal, as the LLM sees it
+ * if selected.
  */
 export interface ReportNoteItem {
   note_id: string;
-  pestpac_note_id: number;
+  source?: ReportNoteItemSource;
+  pestpac_note_id: number | null;
+  added_by?: ReportAddedBy | null;
   note_date: string | null;
   note_code: string | null;
   author: string | null;

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.tenancy import Crumb, PartialUpdate
 
@@ -211,11 +211,28 @@ class ReportContext(BaseModel):
 # --- Reports (one per service order, editable until final) ------------------------------------
 
 
+# Where a note or photo came from: PestPac (offered when the report was started), or added in
+# the portal by whoever is writing the report (never sent to PestPac).
+ItemSource = Literal["pestpac", "portal"]
+
+
+class ReportAddedBy(BaseModel):
+    """Who added a portal note or photo, and when. The email is kept as it was then."""
+
+    user_id: uuid.UUID
+    email: str
+    at: datetime
+
+
 class ReportNoteItem(BaseModel):
-    """A note dated near the order's work date, as the LLM sees it if selected."""
+    """A note dated near the order's work date, or one added in the portal, as the LLM sees it
+    if selected."""
 
     note_id: uuid.UUID
-    pestpac_note_id: int
+    source: ItemSource = "pestpac"
+    # None for portal notes, which aren't in PestPac.
+    pestpac_note_id: int | None
+    added_by: ReportAddedBy | None = None
     note_date: datetime | None
     note_code: str | None
     author: str | None
@@ -257,11 +274,15 @@ class ReportConditionComment(BaseModel):
 
 
 class ReportPhotoItem(BaseModel):
-    """An image dated near the order's work date. Selected ones appear in the report, in
-    list order, with their caption."""
+    """An image dated near the order's work date, or one uploaded in the portal. Selected ones
+    appear in the report, in list order, with their caption. PestPac photos are documents
+    (`document_id`); uploads are stored files (`file_id`) and aren't in PestPac."""
 
-    document_id: uuid.UUID
-    pestpac_document_id: int
+    source: ItemSource = "pestpac"
+    document_id: uuid.UUID | None = None
+    file_id: uuid.UUID | None = None
+    pestpac_document_id: int | None
+    added_by: ReportAddedBy | None = None
     name: str | None
     file_name: str | None
     document_date: datetime | None
@@ -298,9 +319,24 @@ class ReportConditionCommentChoice(BaseModel):
 
 
 class ReportPhotoChoice(BaseModel):
-    document_id: uuid.UUID
+    """A photo by its `document_id` (PestPac) or `file_id` (uploaded in the portal)."""
+
+    document_id: uuid.UUID | None = None
+    file_id: uuid.UUID | None = None
     selected: bool
     caption: str | None = Field(default=None, max_length=300)
+
+    @model_validator(mode="after")
+    def _one_id(self) -> ReportPhotoChoice:
+        if (self.document_id is None) == (self.file_id is None):
+            raise ValueError("Give either document_id or file_id")
+        return self
+
+
+class ReportNoteAdd(BaseModel):
+    """A note added in the portal by whoever is writing the report. It isn't sent to PestPac."""
+
+    text: str = Field(min_length=1, max_length=5000)
 
 
 class ReportUpdate(BaseModel):
