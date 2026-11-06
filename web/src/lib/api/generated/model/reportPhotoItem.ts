@@ -4,14 +4,20 @@
  * Customer Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportAddedBy } from './reportAddedBy';
+import type { ReportPhotoItemSource } from './reportPhotoItemSource';
 
 /**
- * An image dated near the order's work date. Selected ones appear in the report, in
- * list order, with their caption.
+ * An image dated near the order's work date, or one uploaded in the portal. Selected ones
+ * appear in the report, in list order, with their caption. PestPac photos are documents
+ * (`document_id`); uploads are stored files (`file_id`) and aren't in PestPac.
  */
 export interface ReportPhotoItem {
-  document_id: string;
-  pestpac_document_id: number;
+  source?: ReportPhotoItemSource;
+  document_id?: string | null;
+  file_id?: string | null;
+  pestpac_document_id: number | null;
+  added_by?: ReportAddedBy | null;
   name: string | null;
   file_name: string | null;
   document_date: string | null;

@@ -1,10 +1,19 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, FileDown, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  FileDown,
+  ImagePlus,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { formatPestPacDate } from "@/components/service-order-list";
@@ -17,14 +26,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/page-tabs
 import { Textarea } from "@/components/ui/textarea";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { errorMessage } from "@/lib/api/errors";
-import type { ReportPhotoItem, ReportRead, TemplateField } from "@/lib/api/generated/model";
+import type {
+  ReportAddedBy,
+  ReportPhotoItem,
+  ReportRead,
+  TemplateField,
+} from "@/lib/api/generated/model";
 import {
   getReportsGetServiceReportPdfUrl,
   getReportsGetServiceReportQueryKey,
   getReportsPreviewServiceReportUrl,
+  reportsAddServiceReportPhoto,
+  useReportsAddServiceReportNote,
   useReportsDraftServiceReport,
   useReportsFinalizeServiceReport,
   useReportsGetServiceReport,
+  useReportsRemoveServiceReportNote,
+  useReportsRemoveServiceReportPhoto,
   useReportsReviseServiceReport,
   useReportsUpdateServiceReport,
 } from "@/lib/api/generated/reports/reports";
@@ -59,6 +77,26 @@ const STATUS_LABEL: Record<string, string> = {
   final: "Final",
   superseded: "Superseded",
 };
+
+// Uploads the API accepts (it checks the contents too).
+const PHOTO_TYPES = "image/jpeg,image/png,image/webp,image/gif";
+
+/** Marks a note or photo someone added here: it isn't in PestPac. */
+function AddedInPortal({ addedBy }: { addedBy?: ReportAddedBy | null }) {
+  return (
+    <span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <Badge variant="outline">Added in portal · not in PestPac</Badge>
+      {addedBy && (
+        <span>
+          {addedBy.email} · {new Date(addedBy.at).toLocaleString()}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** A photo's key in edits: PestPac's document, or the file uploaded here. */
+const photoKey = (p: ReportPhotoItem) => p.document_id ?? p.file_id ?? "";
 
 function move<T>(list: T[], from: number, to: number): T[] {
   if (to < 0 || to >= list.length) return list;
@@ -216,6 +254,7 @@ function PhotoRow({
   disabled,
   onChange,
   onMove,
+  onRemove,
 }: {
   photo: ReportPhotoItem;
   index: number;
@@ -223,13 +262,19 @@ function PhotoRow({
   disabled: boolean;
   onChange: (p: ReportPhotoItem) => void;
   onMove: (to: number) => void;
+  onRemove: () => void;
 }) {
+  const added = photo.source === "portal";
   return (
     <li className="flex flex-wrap items-start gap-3 p-3">
       {/* Thumbnails come through the BFF; lazy, since originals are full-size. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/api/bff/v1/documents/${photo.document_id}/file`}
+        src={
+          photo.file_id
+            ? `/api/bff/v1/files/${photo.file_id}`
+            : `/api/bff/v1/documents/${photo.document_id}/file`
+        }
         alt={photo.name ?? ""}
         loading="lazy"
         className="h-24 w-32 rounded border border-border object-cover"
@@ -243,9 +288,16 @@ function PhotoRow({
             checked={photo.selected}
             onChange={(e) => onChange({ ...photo, selected: e.target.checked })}
           />
-          Include · {formatPestPacDate(photo.document_date, true)} · DocumentID{" "}
-          {photo.pestpac_document_id}
+          {added ? (
+            <>Include{photo.name && ` · ${photo.name}`}</>
+          ) : (
+            <>
+              Include · {formatPestPacDate(photo.document_date, true)} · DocumentID{" "}
+              {photo.pestpac_document_id}
+            </>
+          )}
         </label>
+        {added && <AddedInPortal addedBy={photo.added_by} />}
         <Input
           aria-label="Caption"
           placeholder="Caption"
@@ -273,6 +325,17 @@ function PhotoRow({
         >
           <ArrowDown aria-hidden />
         </Button>
+        {added && (
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={disabled}
+            aria-label="Remove uploaded photo"
+            onClick={onRemove}
+          >
+            <Trash2 aria-hidden />
+          </Button>
+        )}
       </div>
     </li>
   );
@@ -327,7 +390,18 @@ function Preview({ reportId, version }: { reportId: string; version: string }) {
   );
 }
 
-function Editor({ report }: { report: ReportRead }) {
+type UploadState = { done: number; total: number; error?: string } | null;
+
+function Editor({
+  report,
+  upload,
+  setUpload,
+}: {
+  report: ReportRead;
+  // Kept by the page: the editor remounts each time a photo lands, mid-upload.
+  upload: UploadState;
+  setUpload: (u: UploadState) => void;
+}) {
   const router = useRouter();
   const [tab, setTab] = useUrlTab(
     ["sources", "report", "preview"],
@@ -361,7 +435,20 @@ function Editor({ report }: { report: ReportRead }) {
   const revise = useReportsReviseServiceReport({
     mutation: { onSuccess: (res) => router.push(`/service-reports/${res.data.id}`) },
   });
-  const busy = update.isPending || draft.isPending || finalize.isPending;
+  const addNote = useReportsAddServiceReportNote({ mutation: { onSuccess: onSaved } });
+  const removeNote = useReportsRemoveServiceReportNote({ mutation: { onSuccess: onSaved } });
+  const removePhoto = useReportsRemoveServiceReportPhoto({ mutation: { onSuccess: onSaved } });
+  const [noteText, setNoteText] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+  const uploading = upload !== null && upload.done < upload.total && !upload.error;
+  const busy =
+    update.isPending ||
+    draft.isPending ||
+    finalize.isPending ||
+    addNote.isPending ||
+    removeNote.isPending ||
+    removePhoto.isPending ||
+    uploading;
 
   const changes = () => ({
     fields,
@@ -372,7 +459,7 @@ function Editor({ report }: { report: ReportRead }) {
       selected: c.selected,
     })),
     photos: photos.map((p) => ({
-      document_id: p.document_id,
+      ...(p.file_id ? { file_id: p.file_id } : { document_id: p.document_id }),
       selected: p.selected,
       caption: p.caption,
     })),
@@ -382,6 +469,31 @@ function Editor({ report }: { report: ReportRead }) {
     if (dirty) await save();
     await next();
   };
+
+  // Added items are saved at once; unsaved edits are saved first so they aren't lost.
+  const uploadPhotos = (files: File[]) =>
+    saveThen(async () => {
+      setUpload({ done: 0, total: files.length });
+      for (const [i, file] of files.entries()) {
+        try {
+          const res = await reportsAddServiceReportPhoto(
+            report.id,
+            file,
+            { name: file.name.slice(0, 300) },
+            { headers: { "Content-Type": file.type } },
+          );
+          queryClient.setQueryData(key, res);
+          setUpload({ done: i + 1, total: files.length });
+        } catch (err) {
+          setUpload({
+            done: i,
+            total: files.length,
+            error: `${file.name}: ${errorMessage(err, "Upload failed.")}`,
+          });
+          return;
+        }
+      }
+    });
 
   const selectedNotes = notes.filter((n) => n.selected).length;
   const commentSelected = techComment !== null && useComment;
@@ -396,7 +508,13 @@ function Editor({ report }: { report: ReportRead }) {
   ]
     .filter(Boolean)
     .join(" and ");
-  const error = update.error ?? draft.error ?? finalize.error ?? revise.error;
+  const error =
+    update.error ??
+    draft.error ??
+    finalize.error ??
+    revise.error ??
+    removeNote.error ??
+    removePhoto.error;
 
   return (
     <div className="flex flex-col gap-4">
@@ -537,7 +655,9 @@ function Editor({ report }: { report: ReportRead }) {
                   <input
                     type="checkbox"
                     className="mt-1 size-4 accent-primary"
-                    aria-label={`Use note ${n.pestpac_note_id}`}
+                    aria-label={
+                      n.source === "portal" ? "Use added note" : `Use note ${n.pestpac_note_id}`
+                    }
                     disabled={locked}
                     checked={n.selected}
                     onChange={(e) =>
@@ -546,18 +666,75 @@ function Editor({ report }: { report: ReportRead }) {
                       )
                     }
                   />
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-muted-foreground">
-                      {formatPestPacDate(n.note_date, true)}
-                      {n.author && ` · ${n.author}`}
-                      {n.note_code && ` · ${n.note_code}`}
-                      {n.linked_to_order && " · linked to this order"}
-                    </span>
+                  <div className="flex flex-1 flex-col gap-1">
+                    {n.source === "portal" ? (
+                      <AddedInPortal addedBy={n.added_by} />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {formatPestPacDate(n.note_date, true)}
+                        {n.author && ` · ${n.author}`}
+                        {n.note_code && ` · ${n.note_code}`}
+                        {n.linked_to_order && " · linked to this order"}
+                      </span>
+                    )}
                     <p className="text-sm whitespace-pre-line">{n.text}</p>
                   </div>
+                  {n.source === "portal" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={locked || busy}
+                      aria-label="Remove added note"
+                      onClick={() =>
+                        saveThen(() =>
+                          removeNote.mutateAsync({ reportId: report.id, noteId: n.note_id }),
+                        )
+                      }
+                    >
+                      <Trash2 aria-hidden />
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
+            {!locked && (
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!noteText.trim()) return;
+                  saveThen(() =>
+                    addNote.mutateAsync({ reportId: report.id, data: { text: noteText } }),
+                  );
+                }}
+              >
+                <Label htmlFor="add-note">Add a note</Label>
+                <Textarea
+                  id="add-note"
+                  rows={3}
+                  maxLength={5000}
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="What you saw or were told that isn't in PestPac's notes"
+                />
+                {addNote.isError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{errorMessage(addNote.error)}</AlertDescription>
+                  </Alert>
+                )}
+                <div>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    disabled={busy || !noteText.trim()}
+                  >
+                    <Plus aria-hidden />
+                    {addNote.isPending ? "Adding…" : "Add Note"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </section>
           {conditionComments.length > 0 && (
             <section className="flex flex-col gap-2">
@@ -604,28 +781,71 @@ function Editor({ report }: { report: ReportRead }) {
           <section className="flex flex-col gap-2">
             <h2 className="text-xl">Photos ({photos.filter((p) => p.selected).length} selected)</h2>
             <p className="text-sm text-muted-foreground">
-              Images from the day before to the day after the work date. Selected photos appear in
-              the report in this order, with their captions.
+              Images from the day before to the day after the work date, and any uploaded here.
+              Selected photos appear in the report in this order, with their captions.
             </p>
             <ul className="divide-y divide-border rounded-lg border border-border bg-card">
               {photos.length === 0 && (
                 <li className="p-4 text-muted-foreground">
                   No photos near the work date. Sync the location&apos;s documents and conditions to
-                  collect them.
+                  collect them, or upload your own below.
                 </li>
               )}
               {photos.map((p, i) => (
                 <PhotoRow
-                  key={p.document_id}
+                  key={photoKey(p)}
                   photo={p}
                   index={i}
                   count={photos.length}
                   disabled={locked}
                   onChange={(next) => edit(setPhotos)(photos.map((x, j) => (j === i ? next : x)))}
                   onMove={(to) => edit(setPhotos)(move(photos, i, to))}
+                  onRemove={() =>
+                    saveThen(() =>
+                      removePhoto.mutateAsync({ reportId: report.id, fileId: p.file_id ?? "" }),
+                    )
+                  }
                 />
               ))}
             </ul>
+            {upload && (uploading || upload.error) && (
+              <Alert variant={upload.error ? "destructive" : "default"} role="status">
+                <AlertDescription>
+                  {upload.error
+                    ? `Uploaded ${upload.done} of ${upload.total}. ${upload.error}`
+                    : `Uploading ${upload.done + 1} of ${upload.total}…`}
+                </AlertDescription>
+              </Alert>
+            )}
+            {!locked && (
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept={PHOTO_TYPES}
+                  multiple
+                  className="sr-only"
+                  aria-label="Choose photos to upload"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    e.target.value = "";
+                    if (files.length) void uploadPhotos(files);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => fileInput.current?.click()}
+                >
+                  <ImagePlus aria-hidden />
+                  {uploading ? "Uploading…" : "Upload Photos"}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  JPEG, PNG, WebP, or GIF, up to 20 MB each.
+                </span>
+              </div>
+            )}
           </section>
         </TabsContent>
 
@@ -657,6 +877,7 @@ function Editor({ report }: { report: ReportRead }) {
 
 export function ServiceReportEditor() {
   const { reportId } = useParams<{ reportId: string }>();
+  const [upload, setUpload] = useState<UploadState>(null);
   const report = useReportsGetServiceReport(reportId, {
     query: {
       refetchInterval: (q) => (q.state.data?.data.status === "drafting" ? POLL_MS : false),
@@ -699,7 +920,7 @@ export function ServiceReportEditor() {
           {order?.work_date && ` · worked ${formatPestPacDate(order.work_date, true)}`}
         </p>
       </div>
-      <Editor key={r.updated_at} report={r} />
+      <Editor key={r.updated_at} report={r} upload={upload} setUpload={setUpload} />
     </div>
   );
 }

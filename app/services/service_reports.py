@@ -35,8 +35,11 @@ from app.models import (
     ReportStatus,
     ReportTemplate,
     ServiceOrder,
+    StoredFile,
+    User,
 )
 from app.schemas.reports import (
+    ReportAddedBy,
     ReportCondition,
     ReportContext,
     ReportData,
@@ -62,6 +65,15 @@ IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".bmp", "
 # Photos are downscaled before they're embedded (the originals are full-size phone photos).
 PHOTO_MAX_PX = 1600
 PHOTO_JPEG_QUALITY = 80
+# Photos uploaded in the portal: one image per request, checked with Pillow, stored as is.
+UPLOAD_MAX_BYTES = 20_000_000
+UPLOAD_FORMATS = {
+    "JPEG": "image/jpeg",
+    "PNG": "image/png",
+    "WEBP": "image/webp",
+    "GIF": "image/gif",
+}
+MAX_ADDED_ITEMS = 200
 
 
 class ReportStateError(RuntimeError):
@@ -358,13 +370,13 @@ def update_report(
                 raise ReportInputError(f"Comment {choice.comment_id} isn't one of this report's")
             by_id[choice.comment_id].selected = choice.selected
     if changes.photos is not None:
-        by_id = {p.document_id: p for p in data.photos}
-        listed = [c.document_id for c in changes.photos]
+        by_id = {_photo_key(p): p for p in data.photos}
+        listed = [choice.document_id or choice.file_id for choice in changes.photos]
         if sorted(map(str, listed)) != sorted(map(str, by_id)):
             raise ReportInputError("List every one of the report's photos, in the order wanted")
         reordered = []
-        for choice in changes.photos:
-            photo = by_id[choice.document_id]
+        for choice, key in zip(changes.photos, listed, strict=True):
+            photo = by_id[key]
             photo.selected = choice.selected
             photo.caption = choice.caption
             reordered.append(photo)
@@ -373,6 +385,142 @@ def update_report(
     report.updated_by = user_id
     db.commit()
     return report
+
+
+# --- Notes and photos added in the portal ---------------------------------------------------
+# Whoever is writing the report (reports:write) can add notes and upload photos. They live in
+# the report's data beside PestPac's, marked `source: "portal"` with who added them and when,
+# carry over to new versions like everything else, and are never sent to PestPac.
+
+
+def _photo_key(photo: ReportPhotoItem) -> uuid.UUID:
+    key = photo.document_id or photo.file_id
+    if key is None:
+        raise ReportInputError("A photo has neither a document nor a file")
+    return key
+
+
+def _added_by(db: Session, user_id: uuid.UUID) -> ReportAddedBy:
+    user = db.get(User, user_id)
+    return ReportAddedBy(user_id=user_id, email=user.email, at=datetime.now(UTC))
+
+
+def _save(db: Session, report: Report, data: ReportData, user_id: uuid.UUID) -> Report:
+    report.data = data.model_dump(mode="json")
+    report.updated_by = user_id
+    db.commit()
+    return report
+
+
+def add_note(db: Session, report: Report, text: str, user_id: uuid.UUID) -> Report:
+    """Add a note to a draft, selected, so the narrative is drafted from it too."""
+    _require_draft(report)
+    text = text.strip()
+    if not text:
+        raise ReportInputError("The note is empty")
+    data = report_data(report)
+    if sum(n.source == "portal" for n in data.notes) >= MAX_ADDED_ITEMS:
+        raise ReportInputError(f"A report can have at most {MAX_ADDED_ITEMS} added notes")
+    added_by = _added_by(db, user_id)
+    data.notes.append(
+        ReportNoteItem(
+            note_id=uuid.uuid4(),
+            source="portal",
+            pestpac_note_id=None,
+            added_by=added_by,
+            note_date=None,
+            note_code=None,
+            author=added_by.email,
+            text=text,
+            linked_to_order=True,
+            selected=True,
+        )
+    )
+    return _save(db, report, data, user_id)
+
+
+def remove_note(db: Session, report: Report, note_id: uuid.UUID, user_id: uuid.UUID) -> Report:
+    """Remove a note added in the portal. PestPac's notes can only be left unselected."""
+    _require_draft(report)
+    data = report_data(report)
+    note = next((n for n in data.notes if n.note_id == note_id), None)
+    if note is None:
+        raise ReportInputError(f"Note {note_id} isn't one of this report's notes")
+    if note.source != "portal":
+        raise ReportInputError("PestPac notes can't be removed; unselect it instead")
+    data.notes = [n for n in data.notes if n.note_id != note_id]
+    return _save(db, report, data, user_id)
+
+
+def _image_type(data: bytes) -> str:
+    """The image's content type, from its contents. Refuses anything Pillow can't read, since
+    the report renders photos through Pillow."""
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            image_format = image.format
+            image.verify()
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise ReportInputError("The file isn't an image the report can use") from exc
+    if image_format not in UPLOAD_FORMATS:
+        raise ReportInputError("Upload a JPEG, PNG, WebP, or GIF image")
+    return UPLOAD_FORMATS[image_format]
+
+
+def add_photo(
+    db: Session,
+    report: Report,
+    storage: ObjectStorage,
+    data: bytes,
+    *,
+    original_name: str | None,
+    user_id: uuid.UUID,
+) -> Report:
+    """Store an uploaded image and add it to a draft's photos, selected, at the end."""
+    _require_draft(report)
+    if not data:
+        raise ReportInputError("The file is empty")
+    if len(data) > UPLOAD_MAX_BYTES:
+        raise ReportInputError(f"Photos can be at most {UPLOAD_MAX_BYTES // 1_000_000} MB")
+    content_type = _image_type(data)
+    report_values = report_data(report)
+    if sum(p.source == "portal" for p in report_values.photos) >= MAX_ADDED_ITEMS:
+        raise ReportInputError(f"A report can have at most {MAX_ADDED_ITEMS} uploaded photos")
+    name = (original_name or "").strip()[:300] or None
+    stored = files.store_file(
+        db,
+        storage,
+        operator_id=report.operator_id,
+        company_id=report.company_id,
+        source="report_upload",
+        key=f"operators/{report.operator_id}/reports/{report.id}/uploads/{uuid.uuid4()}",
+        data=data,
+        content_type=content_type,
+        original_name=name,
+    )
+    report_values.photos.append(
+        ReportPhotoItem(
+            source="portal",
+            file_id=stored.id,
+            pestpac_document_id=None,
+            added_by=_added_by(db, user_id),
+            name=name,
+            file_name=name,
+            document_date=None,
+            selected=True,
+            caption=None,
+        )
+    )
+    return _save(db, report, report_values, user_id)
+
+
+def remove_photo(db: Session, report: Report, file_id: uuid.UUID, user_id: uuid.UUID) -> Report:
+    """Remove an uploaded photo from a draft. The file is kept: an earlier version may show it."""
+    _require_draft(report)
+    data = report_data(report)
+    if not any(p.file_id == file_id for p in data.photos):
+        raise ReportInputError(f"Photo {file_id} isn't one of this report's uploaded photos")
+    data.photos = [p for p in data.photos if p.file_id != file_id]
+    return _save(db, report, data, user_id)
 
 
 # --- Narrative draft (worker) ---------------------------------------------------------------
@@ -444,6 +592,8 @@ def draft_input(data: ReportData) -> dict[str, Any]:
         "notes": [
             {
                 "date": n.note_date.isoformat() if n.note_date else None,
+                # "portal": written in the portal by the report's author, not a PestPac note.
+                "source": n.source,
                 "code": n.note_code,
                 "author": n.author,
                 "text": n.text,
@@ -525,11 +675,11 @@ def run_draft(db: Session, report: Report) -> Report:
 # --- Rendering ------------------------------------------------------------------------------
 
 
-def _photo_src(storage: ObjectStorage, document: Document) -> str:
+def _photo_src(storage: ObjectStorage, storage_key: str | None, label: str) -> str:
     """The stored image, downscaled, as a data: URI."""
-    if document.storage_key is None:
-        raise ReportInputError(f"Photo {document.pestpac_document_id} isn't stored yet")
-    stored = storage.get(document.storage_key)
+    if storage_key is None:
+        raise ReportInputError(f"Photo {label} isn't stored yet")
+    stored = storage.get(storage_key)
     try:
         with Image.open(io.BytesIO(stored.data)) as image:
             image = ImageOps.exif_transpose(image).convert("RGB")
@@ -537,9 +687,7 @@ def _photo_src(storage: ObjectStorage, document: Document) -> str:
             out = io.BytesIO()
             image.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY)
     except (UnidentifiedImageError, OSError) as exc:
-        raise ReportInputError(
-            f"Photo {document.pestpac_document_id} can't be read as an image"
-        ) from exc
+        raise ReportInputError(f"Photo {label} can't be read as an image") from exc
     return "data:image/jpeg;base64," + base64.b64encode(out.getvalue()).decode()
 
 
@@ -552,16 +700,21 @@ def build_report_context(
     if selected:
         if storage is None:
             raise StorageError("Object storage is not configured (S3_BUCKET)")
-        documents = {
-            d.id: d
-            for d in db.scalars(
-                select(Document).where(Document.id.in_([p.document_id for p in selected]))
-            )
-        }
+        # Where each photo is stored, with how errors name it: PestPac's DocumentID, or the
+        # uploaded file's name.
+        sources: dict[uuid.UUID, tuple[str | None, str]] = {}
+        document_ids = [p.document_id for p in selected if p.document_id]
+        if document_ids:
+            for d in db.scalars(select(Document).where(Document.id.in_(document_ids))):
+                sources[d.id] = (d.storage_key, str(d.pestpac_document_id))
+        file_ids = [p.file_id for p in selected if p.file_id]
+        if file_ids:
+            for f in db.scalars(select(StoredFile).where(StoredFile.id.in_(file_ids))):
+                sources[f.id] = (f.storage_key, f.original_name or "uploaded in the portal")
         photos = [
-            ReportPhoto(src=_photo_src(storage, documents[p.document_id]), caption=p.caption)
+            ReportPhoto(src=_photo_src(storage, *sources[_photo_key(p)]), caption=p.caption)
             for p in selected
-            if p.document_id in documents
+            if _photo_key(p) in sources
         ]
     return ReportContext.model_validate(
         {

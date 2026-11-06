@@ -698,3 +698,145 @@ def test_another_orders_note_that_day_is_offered_but_not_selected(client, world,
         db.commit()
     report = _start(client, world, admin, template)
     assert {n["pestpac_note_id"]: n["selected"] for n in report["data"]["notes"]} == {9: False}
+
+
+# --- Notes and photos added in the portal ---------------------------------------------------
+
+
+def _small_png() -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (40, 30), (10, 200, 30)).save(out, format="PNG")
+    return out.getvalue()
+
+
+def _upload(client, report_id, data, headers, name="back door.png", content_type="image/png"):
+    return client.post(
+        f"/v1/service-reports/{report_id}/photos",
+        params={"name": name},
+        content=data,
+        headers={**headers, "content-type": content_type},
+    )
+
+
+def test_an_added_note_records_who_added_it_and_is_drafted_from(
+    client, world, admin, template, visit, fake_llm
+):
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+    assert client.post(f"{url}/notes", json={"text": "   "}, headers=admin).status_code == 422
+
+    resp = client.post(f"{url}/notes", json={"text": " Gap sealed by the manager. "}, headers=admin)
+    assert resp.status_code == 201, resp.text
+    added = resp.json()["data"]["notes"][-1]
+    assert added["source"] == "portal" and added["pestpac_note_id"] is None
+    assert added["text"] == "Gap sealed by the manager." and added["selected"] is True
+    assert added["added_by"]["email"] == world.emails["admin_a"]
+    assert added["added_by"]["at"]
+    # PestPac's notes are marked as theirs.
+    assert {n["source"] for n in resp.json()["data"]["notes"][:-1]} == {"pestpac"}
+
+    client.post(f"{url}/draft", headers=admin)
+    _run_worker()
+    [(_, data)] = fake_llm
+    assert data["notes"][-1] == {
+        "date": None,
+        "source": "portal",
+        "code": None,
+        "author": world.emails["admin_a"],
+        "text": "Gap sealed by the manager.",
+    }
+
+
+def test_only_added_notes_can_be_removed(client, world, admin, template, visit):
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+    pestpac_note = report["data"]["notes"][0]["note_id"]
+    assert client.delete(f"{url}/notes/{pestpac_note}", headers=admin).status_code == 422
+
+    added = client.post(f"{url}/notes", json={"text": "Remove me"}, headers=admin).json()
+    note_id = added["data"]["notes"][-1]["note_id"]
+    resp = client.delete(f"{url}/notes/{note_id}", headers=admin)
+    assert resp.status_code == 200
+    assert note_id not in [n["note_id"] for n in resp.json()["data"]["notes"]]
+    assert client.delete(f"{url}/notes/{note_id}", headers=admin).status_code == 422
+
+
+def test_an_uploaded_photo_is_stored_and_rendered(client, world, admin, template, visit, storage):
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+
+    resp = _upload(client, report["id"], _small_png(), admin)
+    assert resp.status_code == 201, resp.text
+    photo = resp.json()["data"]["photos"][-1]
+    assert photo["source"] == "portal" and photo["document_id"] is None
+    assert photo["pestpac_document_id"] is None and photo["selected"] is True
+    assert photo["name"] == "back door.png"
+    assert photo["added_by"]["email"] == world.emails["admin_a"]
+
+    with SessionLocal() as db:
+        stored = db.get(StoredFile, photo["file_id"])
+        assert stored.source == "report_upload" and stored.company_id == world.company_a
+        assert stored.content_type == "image/png"
+        assert stored.storage_key.startswith(
+            f"operators/{world.op_a}/reports/{report['id']}/uploads/"
+        )
+    served = client.get(f"/v1/files/{photo['file_id']}", headers=admin)
+    assert served.status_code == 200 and served.content == _small_png()
+
+    # It's chosen, captioned, and reordered by its file id, like PestPac's by document id.
+    photos = [
+        {"file_id": photo["file_id"], "selected": True, "caption": "Back door, sealed"},
+        *[{"document_id": p["document_id"], "selected": False} for p in report["data"]["photos"]],
+    ]
+    resp = client.patch(url, json={"photos": photos}, headers=admin)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["data"]["photos"][0]["caption"] == "Back door, sealed"
+    both = {"document_id": photos[1]["document_id"], "file_id": photo["file_id"], "selected": True}
+    assert client.patch(url, json={"photos": [both]}, headers=admin).status_code == 422
+
+    html = client.get(f"{url}/preview", headers=admin).text
+    assert html.count('src="data:image/jpeg;base64,') == 1
+    assert "<figcaption>Back door, sealed</figcaption>" in html
+
+    # It carries over to a new version.
+    assert client.post(f"{url}/finalize", headers=admin).status_code == 200
+    revision = client.post(f"{url}/revise", headers=admin).json()
+    carried = revision["data"]["photos"][0]
+    assert carried["file_id"] == photo["file_id"] and carried["source"] == "portal"
+
+
+def test_uploads_must_be_images_on_a_draft(client, world, admin, template, storage):
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+    assert _upload(client, report["id"], b"", admin).status_code == 422
+    not_image = _upload(client, report["id"], b"%PDF-1.4 nope", admin, content_type="image/png")
+    assert not_image.status_code == 422
+    assert not_image.json()["detail"] == "The file isn't an image the report can use"
+    bmp = io.BytesIO()
+    Image.new("RGB", (4, 4)).save(bmp, format="BMP")
+    assert _upload(client, report["id"], bmp.getvalue(), admin).status_code == 422
+
+    too_large = _upload(client, report["id"], b"0" * 20_000_001, admin)
+    assert too_large.status_code == 413
+    assert storage.objects == {} or not any("/uploads/" in k for k in storage.objects)
+
+    added = _upload(client, report["id"], _small_png(), admin).json()
+    file_id = added["data"]["photos"][-1]["file_id"]
+    assert client.post(f"{url}/finalize", headers=admin).status_code == 200
+    # A final report takes no additions or removals.
+    assert _upload(client, report["id"], _small_png(), admin).status_code == 409
+    assert client.post(f"{url}/notes", json={"text": "late"}, headers=admin).status_code == 409
+    assert client.delete(f"{url}/photos/{file_id}", headers=admin).status_code == 409
+
+
+def test_removing_an_uploaded_photo_keeps_its_file(client, world, admin, template, storage):
+    report = _start(client, world, admin, template)
+    url = f"/v1/service-reports/{report['id']}"
+    file_id = _upload(client, report["id"], _small_png(), admin).json()["data"]["photos"][-1][
+        "file_id"
+    ]
+    resp = client.delete(f"{url}/photos/{file_id}", headers=admin)
+    assert resp.status_code == 200 and resp.json()["data"]["photos"] == []
+    assert client.delete(f"{url}/photos/{file_id}", headers=admin).status_code == 422
+    with SessionLocal() as db:
+        assert db.get(StoredFile, file_id) is not None  # an earlier version may show it

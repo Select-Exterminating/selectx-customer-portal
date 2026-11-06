@@ -26,6 +26,7 @@ import type {
 import type {
   HTTPValidationError,
   ReportCreate,
+  ReportNoteAdd,
   ReportPreview,
   ReportRead,
   ReportSummary,
@@ -33,6 +34,7 @@ import type {
   ReportTemplateRead,
   ReportTemplateUpdate,
   ReportUpdate,
+  ReportsAddServiceReportPhotoParams,
   ReportsListReportTemplatesParams
 } from '../model';
 
@@ -1196,6 +1198,415 @@ export const useReportsUpdateServiceReport = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getReportsUpdateServiceReportMutationOptions(options), queryClient);
+    }
+    export type reportsAddServiceReportNoteResponse201 = {
+  data: ReportRead
+  status: 201
+}
+
+export type reportsAddServiceReportNoteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type reportsAddServiceReportNoteResponseSuccess = (reportsAddServiceReportNoteResponse201) & {
+  headers: Headers;
+};
+export type reportsAddServiceReportNoteResponseError = (reportsAddServiceReportNoteResponse422) & {
+  headers: Headers;
+};
+
+export const getReportsAddServiceReportNoteUrl = (reportId: string,) => {
+
+
+
+
+  return `/v1/service-reports/${reportId}/notes`
+}
+
+/**
+ * Add a note to a draft, recording who added it. It's marked as added in the portal and
+ * isn't sent to PestPac. It starts selected, so the narrative is drafted from it.
+ * @summary Add Service Report Note
+ */
+export const reportsAddServiceReportNote = async (reportId: string,
+    reportNoteAdd: ReportNoteAdd, options?: Parameters<typeof bffFetch>[1]): Promise<reportsAddServiceReportNoteResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bffFetch<reportsAddServiceReportNoteResponseSuccess>(getReportsAddServiceReportNoteUrl(reportId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reportNoteAdd)
+  }
+);}
+
+
+
+
+
+export const getReportsAddServiceReportNoteMutationKey = () => ['reportsAddServiceReportNote'] as const;
+
+export const getReportsAddServiceReportNoteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportNote>>, TError,ReportsAddServiceReportNoteMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportNote>>, TError,ReportsAddServiceReportNoteMutationVariables, TContext> => {
+
+const mutationKey = getReportsAddServiceReportNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportsAddServiceReportNote>>, ReportsAddServiceReportNoteMutationVariables> = (props) => {
+          const {reportId,data} = props ?? {};
+
+          return  reportsAddServiceReportNote(reportId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportsAddServiceReportNoteMutationResult = NonNullable<Awaited<ReturnType<typeof reportsAddServiceReportNote>>>
+    export type ReportsAddServiceReportNoteMutationBody = ReportNoteAdd
+    export type ReportsAddServiceReportNoteMutationError = HTTPValidationError
+    export type ReportsAddServiceReportNoteMutationVariables = {reportId: string;data: ReportNoteAdd}
+
+    /**
+ * @summary Add Service Report Note
+ */
+export const useReportsAddServiceReportNote = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportNote>>, TError,ReportsAddServiceReportNoteMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reportsAddServiceReportNote>>,
+        TError,
+        ReportsAddServiceReportNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportsAddServiceReportNoteMutationOptions(options), queryClient);
+    }
+    export type reportsRemoveServiceReportNoteResponse200 = {
+  data: ReportRead
+  status: 200
+}
+
+export type reportsRemoveServiceReportNoteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type reportsRemoveServiceReportNoteResponseSuccess = (reportsRemoveServiceReportNoteResponse200) & {
+  headers: Headers;
+};
+export type reportsRemoveServiceReportNoteResponseError = (reportsRemoveServiceReportNoteResponse422) & {
+  headers: Headers;
+};
+
+export const getReportsRemoveServiceReportNoteUrl = (reportId: string,
+    noteId: string,) => {
+
+
+
+
+  return `/v1/service-reports/${reportId}/notes/${noteId}`
+}
+
+/**
+ * Remove a note added in the portal from a draft. PestPac's notes can't be removed.
+ * @summary Remove Service Report Note
+ */
+export const reportsRemoveServiceReportNote = async (reportId: string,
+    noteId: string, options?: Parameters<typeof bffFetch>[1]): Promise<reportsRemoveServiceReportNoteResponseSuccess> => {
+
+  return bffFetch<reportsRemoveServiceReportNoteResponseSuccess>(getReportsRemoveServiceReportNoteUrl(reportId,noteId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getReportsRemoveServiceReportNoteMutationKey = () => ['reportsRemoveServiceReportNote'] as const;
+
+export const getReportsRemoveServiceReportNoteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>, TError,ReportsRemoveServiceReportNoteMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>, TError,ReportsRemoveServiceReportNoteMutationVariables, TContext> => {
+
+const mutationKey = getReportsRemoveServiceReportNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>, ReportsRemoveServiceReportNoteMutationVariables> = (props) => {
+          const {reportId,noteId} = props ?? {};
+
+          return  reportsRemoveServiceReportNote(reportId,noteId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportsRemoveServiceReportNoteMutationResult = NonNullable<Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>>
+
+    export type ReportsRemoveServiceReportNoteMutationError = HTTPValidationError
+    export type ReportsRemoveServiceReportNoteMutationVariables = {reportId: string;noteId: string}
+
+    /**
+ * @summary Remove Service Report Note
+ */
+export const useReportsRemoveServiceReportNote = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>, TError,ReportsRemoveServiceReportNoteMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reportsRemoveServiceReportNote>>,
+        TError,
+        ReportsRemoveServiceReportNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportsRemoveServiceReportNoteMutationOptions(options), queryClient);
+    }
+    export type reportsAddServiceReportPhotoResponse201 = {
+  data: ReportRead
+  status: 201
+}
+
+export type reportsAddServiceReportPhotoResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type reportsAddServiceReportPhotoResponseSuccess = (reportsAddServiceReportPhotoResponse201) & {
+  headers: Headers;
+};
+export type reportsAddServiceReportPhotoResponseError = (reportsAddServiceReportPhotoResponse422) & {
+  headers: Headers;
+};
+
+export const getReportsAddServiceReportPhotoUrl = (reportId: string,
+    params?: ReportsAddServiceReportPhotoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/service-reports/${reportId}/photos?${stringifiedParams}` : `/v1/service-reports/${reportId}/photos`
+}
+
+/**
+ * Upload a photo to a draft, recording who added it. It's marked as added in the portal
+ * and isn't sent to PestPac. It starts selected, at the end of the photos.
+ * @summary Add Service Report Photo
+ */
+export const reportsAddServiceReportPhoto = async (reportId: string,
+    reportsAddServiceReportPhotoBody: Blob,
+    params?: ReportsAddServiceReportPhotoParams, options?: Parameters<typeof bffFetch>[1]): Promise<reportsAddServiceReportPhotoResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bffFetch<reportsAddServiceReportPhotoResponseSuccess>(getReportsAddServiceReportPhotoUrl(reportId,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'image/*', ...getHeaders(options?.headers) },
+    body: reportsAddServiceReportPhotoBody
+  }
+);}
+
+
+
+
+
+export const getReportsAddServiceReportPhotoMutationKey = () => ['reportsAddServiceReportPhoto'] as const;
+
+export const getReportsAddServiceReportPhotoMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>, TError,ReportsAddServiceReportPhotoMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>, TError,ReportsAddServiceReportPhotoMutationVariables, TContext> => {
+
+const mutationKey = getReportsAddServiceReportPhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>, ReportsAddServiceReportPhotoMutationVariables> = (props) => {
+          const {reportId,data,params} = props ?? {};
+
+          return  reportsAddServiceReportPhoto(reportId,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportsAddServiceReportPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>>
+    export type ReportsAddServiceReportPhotoMutationBody = Blob
+    export type ReportsAddServiceReportPhotoMutationError = HTTPValidationError
+    export type ReportsAddServiceReportPhotoMutationVariables = {reportId: string;data: Blob;params?: ReportsAddServiceReportPhotoParams}
+
+    /**
+ * @summary Add Service Report Photo
+ */
+export const useReportsAddServiceReportPhoto = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>, TError,ReportsAddServiceReportPhotoMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reportsAddServiceReportPhoto>>,
+        TError,
+        ReportsAddServiceReportPhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportsAddServiceReportPhotoMutationOptions(options), queryClient);
+    }
+    export type reportsRemoveServiceReportPhotoResponse200 = {
+  data: ReportRead
+  status: 200
+}
+
+export type reportsRemoveServiceReportPhotoResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type reportsRemoveServiceReportPhotoResponseSuccess = (reportsRemoveServiceReportPhotoResponse200) & {
+  headers: Headers;
+};
+export type reportsRemoveServiceReportPhotoResponseError = (reportsRemoveServiceReportPhotoResponse422) & {
+  headers: Headers;
+};
+
+export const getReportsRemoveServiceReportPhotoUrl = (reportId: string,
+    fileId: string,) => {
+
+
+
+
+  return `/v1/service-reports/${reportId}/photos/${fileId}`
+}
+
+/**
+ * Remove an uploaded photo from a draft. PestPac's photos can't be removed.
+ * @summary Remove Service Report Photo
+ */
+export const reportsRemoveServiceReportPhoto = async (reportId: string,
+    fileId: string, options?: Parameters<typeof bffFetch>[1]): Promise<reportsRemoveServiceReportPhotoResponseSuccess> => {
+
+  return bffFetch<reportsRemoveServiceReportPhotoResponseSuccess>(getReportsRemoveServiceReportPhotoUrl(reportId,fileId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getReportsRemoveServiceReportPhotoMutationKey = () => ['reportsRemoveServiceReportPhoto'] as const;
+
+export const getReportsRemoveServiceReportPhotoMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>, TError,ReportsRemoveServiceReportPhotoMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>, TError,ReportsRemoveServiceReportPhotoMutationVariables, TContext> => {
+
+const mutationKey = getReportsRemoveServiceReportPhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>, ReportsRemoveServiceReportPhotoMutationVariables> = (props) => {
+          const {reportId,fileId} = props ?? {};
+
+          return  reportsRemoveServiceReportPhoto(reportId,fileId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportsRemoveServiceReportPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>>
+
+    export type ReportsRemoveServiceReportPhotoMutationError = HTTPValidationError
+    export type ReportsRemoveServiceReportPhotoMutationVariables = {reportId: string;fileId: string}
+
+    /**
+ * @summary Remove Service Report Photo
+ */
+export const useReportsRemoveServiceReportPhoto = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>, TError,ReportsRemoveServiceReportPhotoMutationVariables, TContext>, request?: SecondParameter<typeof bffFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reportsRemoveServiceReportPhoto>>,
+        TError,
+        ReportsRemoveServiceReportPhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportsRemoveServiceReportPhotoMutationOptions(options), queryClient);
     }
     export type reportsDraftServiceReportResponse202 = {
   data: ReportRead

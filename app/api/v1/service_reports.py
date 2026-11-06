@@ -1,12 +1,19 @@
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models import Location, Report, ReportTemplate, ServiceOrder
-from app.schemas.reports import ReportCreate, ReportRead, ReportSummary, ReportUpdate
+from app.schemas.reports import (
+    ReportCreate,
+    ReportNoteAdd,
+    ReportRead,
+    ReportSummary,
+    ReportUpdate,
+)
 from app.security.access import AccessScope, get_scope
 from app.security.permissions import Perm
 from app.services import reports, service_reports, trail
@@ -157,6 +164,122 @@ def update_service_report(
     template = db.get(ReportTemplate, report.template_id)
     try:
         report = service_reports.update_report(db, report, template, data, scope.user_id)
+    except (ReportInputError, ReportStateError) as exc:
+        raise _errors(exc) from None
+    return _read(db, report)
+
+
+@router.post(
+    "/service-reports/{report_id}/notes",
+    response_model=ReportRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_service_report_note(
+    report_id: uuid.UUID,
+    data: ReportNoteAdd,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """Add a note to a draft, recording who added it. It's marked as added in the portal and
+    isn't sent to PestPac. It starts selected, so the narrative is drafted from it."""
+    report = _report_or_404(db, report_id)
+    scope.require(Perm.reports_write, report.operator_id, read_perm=Perm.bill_tos_read)
+    try:
+        report = service_reports.add_note(db, report, data.text, scope.user_id)
+    except (ReportInputError, ReportStateError) as exc:
+        raise _errors(exc) from None
+    return _read(db, report)
+
+
+@router.delete("/service-reports/{report_id}/notes/{note_id}", response_model=ReportRead)
+def remove_service_report_note(
+    report_id: uuid.UUID,
+    note_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """Remove a note added in the portal from a draft. PestPac's notes can't be removed."""
+    report = _report_or_404(db, report_id)
+    scope.require(Perm.reports_write, report.operator_id, read_perm=Perm.bill_tos_read)
+    try:
+        report = service_reports.remove_note(db, report, note_id, scope.user_id)
+    except (ReportInputError, ReportStateError) as exc:
+        raise _errors(exc) from None
+    return _read(db, report)
+
+
+async def _upload_body(request: Request) -> bytes:
+    """The uploaded image, refusing anything over UPLOAD_MAX_BYTES (413), declared or not."""
+    limit = service_reports.UPLOAD_MAX_BYTES
+    too_large = HTTPException(
+        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+        detail=f"Photos can be at most {limit // 1_000_000} MB",
+    )
+    declared = request.headers.get("content-length", "")
+    if declared.isdigit() and int(declared) > limit:
+        raise too_large
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw += chunk
+        if len(raw) > limit:
+            raise too_large
+    return bytes(raw)
+
+
+@router.post(
+    "/service-reports/{report_id}/photos",
+    response_model=ReportRead,
+    status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "description": "One image (JPEG, PNG, WebP, or GIF) as the raw body.",
+            "content": {"image/*": {"schema": {"type": "string", "format": "binary"}}},
+        }
+    },
+)
+async def add_service_report_photo(
+    report_id: uuid.UUID,
+    request: Request,
+    name: str | None = Query(default=None, max_length=300, description="The file's name"),
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """Upload a photo to a draft, recording who added it. It's marked as added in the portal
+    and isn't sent to PestPac. It starts selected, at the end of the photos."""
+    report = await run_in_threadpool(_report_or_404, db, report_id)
+    await run_in_threadpool(
+        scope.require, Perm.reports_write, report.operator_id, read_perm=Perm.bill_tos_read
+    )
+    raw = await _upload_body(request)
+    try:
+        report = await run_in_threadpool(
+            service_reports.add_photo,
+            db,
+            report,
+            get_storage(),
+            raw,
+            original_name=name,
+            user_id=scope.user_id,
+        )
+    except (ReportInputError, ReportStateError, StorageError) as exc:
+        db.rollback()
+        raise _errors(exc) from None
+    return await run_in_threadpool(_read, db, report)
+
+
+@router.delete("/service-reports/{report_id}/photos/{file_id}", response_model=ReportRead)
+def remove_service_report_photo(
+    report_id: uuid.UUID,
+    file_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_scope),
+):
+    """Remove an uploaded photo from a draft. PestPac's photos can't be removed."""
+    report = _report_or_404(db, report_id)
+    scope.require(Perm.reports_write, report.operator_id, read_perm=Perm.bill_tos_read)
+    try:
+        report = service_reports.remove_photo(db, report, file_id, scope.user_id)
     except (ReportInputError, ReportStateError) as exc:
         raise _errors(exc) from None
     return _read(db, report)

@@ -2,11 +2,13 @@
 it but lacks the permission". Backend authorization is the final word, so this is the
 contract the UI's permission checks mirror."""
 
+import io
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from PIL import Image
 
 from tests.conftest import ACTORS, World, headers_for
 
@@ -20,6 +22,18 @@ class Case:
     path: Callable[[World], str]
     expected: dict[str, int]
     body: Callable[[World], Any] | None = None
+    # A raw body and its content type, for uploads.
+    content: tuple[bytes, str] | None = None
+
+
+def _png() -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (4, 4)).save(out, format="PNG")
+    return out.getvalue()
+
+
+# Ids no report has: callers allowed to edit get 422 (not one of the report's), others 404/403.
+UNKNOWN_ITEM = "00000000-0000-4000-8000-000000000001"
 
 
 def _all(status: int, **overrides: int) -> dict[str, int]:
@@ -593,6 +607,32 @@ CASES = [
         lambda w: {"fields": {}},
     ),
     Case(
+        "add a note to service report A",
+        "POST",
+        lambda w: f"/v1/service-reports/{w.report_a}/notes",
+        _all(404, platform_admin=201, admin_a=201, staff_a=403),
+        lambda w: {"text": "Added in the portal"},
+    ),
+    Case(
+        "remove an added note from service report A",
+        "DELETE",
+        lambda w: f"/v1/service-reports/{w.report_a}/notes/{UNKNOWN_ITEM}",
+        _all(404, platform_admin=422, admin_a=422, staff_a=403),
+    ),
+    Case(
+        "upload a photo to service report A",
+        "POST",
+        lambda w: f"/v1/service-reports/{w.report_a}/photos",
+        _all(404, platform_admin=201, admin_a=201, staff_a=403),
+        content=(_png(), "image/png"),
+    ),
+    Case(
+        "remove an uploaded photo from service report A",
+        "DELETE",
+        lambda w: f"/v1/service-reports/{w.report_a}/photos/{UNKNOWN_ITEM}",
+        _all(404, platform_admin=422, admin_a=422, staff_a=403),
+    ),
+    Case(
         "draft service report A",
         "POST",
         lambda w: f"/v1/service-reports/{w.report_a}/draft",
@@ -734,8 +774,17 @@ CASES = [
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.name)
 def test_access(client, world, pestpac, case: Case, actor: str):
     headers = headers_for(client, world.emails[actor])
-    body = case.body(world) if case.body else None
-    resp = client.request(case.method, case.path(world), json=body, headers=headers)
+    if case.content:
+        data, content_type = case.content
+        resp = client.request(
+            case.method,
+            case.path(world),
+            content=data,
+            headers={**headers, "content-type": content_type},
+        )
+    else:
+        body = case.body(world) if case.body else None
+        resp = client.request(case.method, case.path(world), json=body, headers=headers)
     assert resp.status_code == case.expected[actor], (
         f"{actor} {case.method} {case.name}: {resp.status_code} {resp.text}"
     )
@@ -800,4 +849,7 @@ def _template(path: str) -> str:
     path = path.replace("/zones/dining_guest", "/zones/{zone}")
     # Form processing takes a GoCanvas root id, not one of ours.
     path = path.replace("/gocanvas-form-processing/5765478", "/gocanvas-form-processing/{root}")
+    # Added notes and photos are addressed by ids inside the report's data.
+    path = path.replace(f"/notes/{UNKNOWN_ITEM}", "/notes/{note_id}")
+    path = path.replace(f"/photos/{UNKNOWN_ITEM}", "/photos/{file_id}")
     return path.split("?", 1)[0]

@@ -5,8 +5,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * A photo by its `document_id` (PestPac) or `file_id` (uploaded in the portal).
+ */
 export interface ReportPhotoChoice {
-  document_id: string;
+  document_id?: string | null;
+  file_id?: string | null;
   selected: boolean;
   caption?: string | null;
 }
